@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+
+  --color-paper: #F5F3EE;
+  --color-ink: #1C2024;
+  --color-blueprint: #14213D;
+  --color-blueprint-light: #1D3159;
+  --color-amber: #F2A93B;
+  --color-teal: #3C6E71;
+  --color-line: #D8D3C7;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+
+.grid-dots {
+  background-image: radial-gradient(circle, var(--color-line) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.bracket-card {
+  position: relative;
+  border: 1px solid var(--color-line);
+}
+.bracket-card::before,
+.bracket-card::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: var(--color-amber);
+}
+.bracket-card::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid var(--color-amber);
+  border-left: 2px solid var(--color-amber);
+}
+.bracket-card::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid var(--color-amber);
+  border-right: 2px solid var(--color-amber);
+}
