@@ -24,10 +24,10 @@ nanoapps.in is a marketplace for small, focused software tools and utilities. Us
 
 - **Frontend:** React 19, TypeScript, Tailwind CSS v4, React Router
 - **Backend:** Node.js, Express.js, TypeScript
-- **Database:** PostgreSQL (Neon)
+- **Database:** PostgreSQL
 - **Authentication:** JWT + email verification
 - **Payments:** Razorpay
-- **Deployment:** Vercel (frontend), Render (backend), Cloudflare (DNS/CDN)
+- **Deployment:** Vercel (frontend), Render (backend), Hostinger (DNS/CDN)
 
 ## Project Structure
 
