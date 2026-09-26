@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import { resendVerificationRequest } from '../api/auth'
 
 export default function Register() {
   const [name, setName] = useState('')
@@ -12,7 +13,6 @@ export default function Register() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const { register } = useAuth()
-  const navigate = useNavigate()
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -21,7 +21,6 @@ export default function Register() {
     try {
       await register(name, email, password)
       setSuccess(true)
-      setTimeout(() => navigate('/login'), 1200)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Something went wrong. Try again.')
     } finally {
@@ -39,57 +38,76 @@ export default function Register() {
             Register to buy tools, subscribe, and manage downloads.
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
-            <div>
-              <label className="block text-sm font-medium text-ink/80">Name</label>
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="mt-1 w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-teal"
-              />
+          {success ? (
+            <div className="mt-8">
+              <p className="text-sm text-teal">
+                Check your email for a verification link, then log in.
+              </p>
+              <button
+                type="button"
+                className="mt-4 text-sm font-medium text-teal hover:underline"
+                onClick={() => resendVerificationRequest(email).catch(() => {})}
+              >
+                Resend verification email
+              </button>
+              <p className="mt-6 text-sm text-ink/60">
+                <Link to="/login" className="font-medium text-teal hover:underline">Go to login</Link>
+              </p>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-ink/80">Email</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-teal"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-ink/80">Password</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-teal"
-              />
-            </div>
+          ) : (
+            <>
+              <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-ink/80">Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="mt-1 w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-teal"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-ink/80">Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="mt-1 w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-teal"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-ink/80">Password</label>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="mt-1 w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-teal"
+                  />
+                </div>
 
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            {success && <p className="text-sm text-teal">Registered. Redirecting to login…</p>}
+                {error && <p className="text-sm text-red-600">{error}</p>}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="mt-2 bg-ink px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint disabled:opacity-60"
-            >
-              {loading ? 'Creating account…' : 'Register'}
-            </button>
-          </form>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-2 bg-ink px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint disabled:opacity-60"
+                >
+                  {loading ? 'Creating account…' : 'Register'}
+                </button>
+              </form>
 
-          <p className="mt-6 text-sm text-ink/60">
-            Already have an account?{' '}
-            <Link to="/login" className="font-medium text-teal hover:underline">
-              Log in
-            </Link>
-          </p>
+              <p className="mt-6 text-sm text-ink/60">
+                Already have an account?{' '}
+                <Link to="/login" className="font-medium text-teal hover:underline">
+                  Log in
+                </Link>
+              </p>
+            </>
+          )}
         </div>
       </main>
       <Footer />

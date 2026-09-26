@@ -1,14 +1,11 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import ToolPegboard from '../components/ToolPegboard'
 import ProductCard from '../components/ProductCard'
-
-const products = [
-  { format: 'PDF', name: 'PDF Redactor', description: 'Black out sensitive text and images from PDFs before you share them.', type: 'Desktop app' as const },
-  { format: 'IMG', name: 'Image Compressor', description: 'Shrink image file sizes in bulk without visible quality loss.', type: 'Web tool' as const },
-  { format: 'CSV', name: 'Data Cleaner', description: 'Fix messy spreadsheets — duplicates, blanks, and formatting in one pass.', type: 'Web tool' as const },
-  { format: 'ZIP', name: 'Batch Renamer', description: 'Rename hundreds of files at once using simple patterns.', type: 'Desktop app' as const },
-]
+import { getProducts } from '../api/products'
+import type { CatalogProduct } from '../api/types'
 
 const steps = [
   { number: '1', title: 'Create your account', description: 'Register with your email and verify it in one click.' },
@@ -17,6 +14,16 @@ const steps = [
 ]
 
 export default function Landing() {
+  const [products, setProducts] = useState<CatalogProduct[]>([])
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    getProducts()
+      .then(({ data }) => setProducts(data.slice(0, 4)))
+      .catch(() => setProducts([]))
+      .finally(() => setReady(true))
+  }, [])
+
   return (
     <div className="bg-paper">
       <Navbar />
@@ -55,9 +62,15 @@ export default function Landing() {
         </p>
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {products.map((product) => (
-            <ProductCard key={product.name} {...product} />
+            <ProductCard key={product.id} {...product} />
           ))}
         </div>
+        {ready && products.length === 0 && (
+          <p className="mt-8 text-sm text-ink/60">
+            The catalog is empty right now. Check back after products are added, or{' '}
+            <Link to="/contact" className="text-teal">tell us what you need</Link>.
+          </p>
+        )}
       </section>
 
       {/* How it works */}

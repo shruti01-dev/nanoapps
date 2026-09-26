@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
-import { loginRequest, registerRequest } from '../api/auth'
+import { loginRequest, meRequest, registerRequest } from '../api/auth'
 
 type User = {
   id: number
@@ -23,11 +23,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user')
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
+    const token = localStorage.getItem('token')
+    if (!token) {
+      setLoading(false)
+      return
     }
-    setLoading(false)
+
+    meRequest()
+      .then(({ data }) => {
+        localStorage.setItem('user', JSON.stringify(data.user))
+        setUser(data.user)
+      })
+      .catch(() => {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        setUser(null)
+      })
+      .finally(() => setLoading(false))
   }, [])
 
   const login = async (email: string, password: string) => {

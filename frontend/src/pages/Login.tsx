@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -11,6 +11,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -18,7 +19,8 @@ export default function Login() {
     setLoading(true)
     try {
       await login(email, password)
-      navigate('/dashboard')
+      const next = params.get('next')
+      navigate(next && next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Something went wrong. Try again.')
     } finally {
@@ -68,6 +70,12 @@ export default function Login() {
               {loading ? 'Logging in…' : 'Log in'}
             </button>
           </form>
+
+          <p className="mt-4 text-sm">
+            <Link to="/forgot-password" className="font-medium text-teal hover:underline">
+              Forgot password?
+            </Link>
+          </p>
 
           <p className="mt-6 text-sm text-ink/60">
             Don't have an account?{' '}

@@ -1,19 +1,28 @@
 import { useState, type FormEvent } from 'react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import { contactRequest } from '../api/auth'
 
 export default function Contact() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [sent, setSent] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    const subject = encodeURIComponent(`Message from ${name}`)
-    const body = encodeURIComponent(`${message}\n\n— ${name} (${email})`)
-    window.location.href = `mailto:support@nanoapps.in?subject=${subject}&body=${body}`
-    setSent(true)
+    setError('')
+    try {
+      await contactRequest(name, email, message)
+      setSent(true)
+    } catch {
+      const subject = encodeURIComponent(`Message from ${name}`)
+      const body = encodeURIComponent(`${message}\n\n— ${name} (${email})`)
+      window.location.href = `mailto:support@nanoapps.in?subject=${subject}&body=${body}`
+      setError('Opening your email client instead.')
+      setSent(true)
+    }
   }
 
   return (
@@ -58,10 +67,11 @@ export default function Contact() {
               />
             </div>
 
-            {sent && (
-              <p className="text-sm text-teal">
-                Opening your email client to send this — if nothing opened, email us directly at{' '}
-                <a href="mailto:support@nanoapps.in" className="font-medium hover:underline">
+            {sent && !error && <p className="text-sm text-teal">Message sent. We'll get back to you.</p>}
+            {error && (
+              <p className="text-sm text-ink/70">
+                {error} If nothing opened, email{' '}
+                <a href="mailto:support@nanoapps.in" className="font-medium text-teal hover:underline">
                   support@nanoapps.in
                 </a>.
               </p>

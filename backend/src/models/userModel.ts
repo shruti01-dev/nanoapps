@@ -19,7 +19,30 @@ export const createUsersTable = async () => {
 };
 
 export const findUserByEmail = async (email: string) => {
-  const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+  const result = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email]);
+  return result.rows[0];
+};
+
+export const findUserById = async (id: number) => {
+  const result = await pool.query(
+    'SELECT id, name, email, role, is_verified FROM users WHERE id = $1',
+    [id]
+  );
+  return result.rows[0];
+};
+
+export const listUsers = async () => {
+  const result = await pool.query(
+    'SELECT id, name, email, role, is_verified, created_at FROM users ORDER BY created_at DESC'
+  );
+  return result.rows;
+};
+
+export const promoteAdminByEmail = async (email: string) => {
+  const result = await pool.query(
+    `UPDATE users SET role = 'admin' WHERE email = $1 RETURNING id, email`,
+    [email]
+  );
   return result.rows[0];
 };
 
@@ -32,6 +55,10 @@ export const createUser = async (name: string, email: string, hashedPassword: st
   return result.rows[0];
 };
 
+export const setVerificationToken = async (userId: number, token: string) => {
+  await pool.query('UPDATE users SET verification_token = $1 WHERE id = $2', [token, userId]);
+};
+
 export const verifyUserEmail = async (token: string) => {
   const result = await pool.query(
     `UPDATE users SET is_verified = TRUE, verification_token = NULL 
@@ -39,4 +66,27 @@ export const verifyUserEmail = async (token: string) => {
     [token]
   );
   return result.rows[0];
+};
+
+export const setResetToken = async (email: string, token: string, expiry: Date) => {
+  const result = await pool.query(
+    `UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE LOWER(email) = LOWER($3) RETURNING id, email`,
+    [token, expiry, email]
+  );
+  return result.rows[0];
+};
+
+export const findUserByValidResetToken = async (token: string) => {
+  const result = await pool.query(
+    `SELECT * FROM users WHERE reset_token = $1 AND reset_token_expiry > NOW()`,
+    [token]
+  );
+  return result.rows[0];
+};
+
+export const updatePasswordAndClearToken = async (userId: number, hashedPassword: string) => {
+  await pool.query(
+    `UPDATE users SET password = $1, reset_token = NULL, reset_token_expiry = NULL WHERE id = $2`,
+    [hashedPassword, userId]
+  );
 };
