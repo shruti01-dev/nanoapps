@@ -41,7 +41,14 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
 
   const timeouts = { connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 20000 };
   const transporter = gmail
-    ? nodemailer.createTransport({ service: 'gmail', auth: { user, pass }, ...timeouts })
+    ? nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        requireTLS: true,
+        auth: { user, pass },
+        ...timeouts,
+      })
     : nodemailer.createTransport({
         host,
         port,
