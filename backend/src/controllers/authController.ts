@@ -43,22 +43,31 @@ export const registerUser = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Enter a valid email' });
     }
 
-    const existingUser = await findUserByEmail(email);
-    if (existingUser) {
+    const address = email.trim().toLowerCase();
+    const existingUser = await findUserByEmail(address);
+    if (existingUser?.is_verified) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
     const rawToken = createRawToken();
-    await createUser(name.trim(), email.trim().toLowerCase(), hashedPassword, hashToken(rawToken));
-    try {
-      await sendVerificationEmail(email.trim().toLowerCase(), rawToken);
-    } catch (error) {
-      if (!(error instanceof MailError)) throw error;
+    if (existingUser) {
+      await setVerificationToken(existingUser.id, hashToken(rawToken));
+    } else {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await createUser(name.trim(), address, hashedPassword, hashToken(rawToken));
     }
 
-    res.status(201).json({
-      message: 'Registered successfully. Check your email to verify your account.',
+    try {
+      await sendVerificationEmail(address, rawToken);
+    } catch (error) {
+      if (!(error instanceof MailError)) throw error;
+      return res.status(503).json({
+        message: 'The account was saved, but the verification email could not be sent.',
+      });
+    }
+
+    res.status(existingUser ? 200 : 201).json({
+      message: 'Check your email for a verification link, then log in.',
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
