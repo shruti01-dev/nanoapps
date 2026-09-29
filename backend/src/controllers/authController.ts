@@ -61,9 +61,7 @@ export const registerUser = async (req: Request, res: Response) => {
       await sendVerificationEmail(address, rawToken);
     } catch (error) {
       if (!(error instanceof MailError)) throw error;
-      return res.status(503).json({
-        message: 'The account was saved, but the verification email could not be sent.',
-      });
+      return res.status(error.status).json({ message: error.message });
     }
 
     res.status(existingUser ? 200 : 201).json({

@@ -20,14 +20,25 @@ const app = express();
 
 const origins = (process.env.CLIENT_URL || 'http://localhost:5173')
   .split(',')
-  .map((origin) => origin.trim())
+  .map((origin) => origin.trim().replace(/\/$/, ''))
   .filter(Boolean);
+
+const isAllowedOrigin = (origin: string) => {
+  const normalized = origin.replace(/\/$/, '');
+  if (origins.includes(normalized)) return true;
+  try {
+    const url = new URL(normalized);
+    return url.protocol === 'https:' && url.hostname.endsWith('.vercel.app') && url.hostname.startsWith('nanoapps');
+  } catch {
+    return false;
+  }
+};
 
 app.set('trust proxy', 1);
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || origins.includes(origin)) {
+      if (!origin || isAllowedOrigin(origin)) {
         callback(null, true);
         return;
       }

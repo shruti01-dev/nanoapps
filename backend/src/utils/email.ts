@@ -1,7 +1,12 @@
 import nodemailer from 'nodemailer';
 
-export const frontendUrl = () =>
-  process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173';
+const publicSite = 'https://nanoapps.vercel.app';
+
+export const frontendUrl = () => {
+  const configured = (process.env.FRONTEND_URL || process.env.CLIENT_URL || '').replace(/\/$/, '');
+  if (!configured || configured.includes('localhost')) return publicSite;
+  return configured.split(',')[0];
+};
 
 export const mailIsConfigured = () =>
   Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
@@ -34,13 +39,15 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
   const from = gmail && !configuredFrom.includes(user) ? user : configuredFrom || user;
   const port = Number(process.env.SMTP_PORT || (gmail ? 465 : 587));
 
+  const timeouts = { connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 20000 };
   const transporter = gmail
-    ? nodemailer.createTransport({ service: 'gmail', auth: { user, pass } })
+    ? nodemailer.createTransport({ service: 'gmail', auth: { user, pass }, ...timeouts })
     : nodemailer.createTransport({
         host,
         port,
         secure: process.env.SMTP_SECURE === 'true' || port === 465,
         auth: { user, pass },
+        ...timeouts,
       });
 
   try {
