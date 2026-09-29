@@ -16,6 +16,17 @@ export const createUsersTable = async () => {
     );
   `;
   await pool.query(query);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS pending_registrations (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      email VARCHAR(150) UNIQUE NOT NULL,
+      password VARCHAR(255) NOT NULL,
+      verification_token VARCHAR(255) NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
 };
 
 export const findUserByEmail = async (email: string) => {
@@ -42,6 +53,61 @@ export const promoteAdminByEmail = async (email: string) => {
   const result = await pool.query(
     `UPDATE users SET role = 'admin' WHERE email = $1 RETURNING id, email`,
     [email]
+  );
+  return result.rows[0];
+};
+
+export const deleteUnverifiedUser = async (email: string) => {
+  await pool.query('DELETE FROM users WHERE LOWER(email) = LOWER($1) AND is_verified = FALSE', [email]);
+};
+
+export const savePendingRegistration = async (
+  name: string,
+  email: string,
+  hashedPassword: string,
+  tokenHash: string,
+  expiresAt: Date
+) => {
+  await pool.query(
+    `INSERT INTO pending_registrations (name, email, password, verification_token, expires_at)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (email) DO UPDATE SET
+       name = EXCLUDED.name,
+       password = EXCLUDED.password,
+       verification_token = EXCLUDED.verification_token,
+       expires_at = EXCLUDED.expires_at`,
+    [name, email, hashedPassword, tokenHash, expiresAt]
+  );
+};
+
+export const deletePendingRegistration = async (email: string) => {
+  await pool.query('DELETE FROM pending_registrations WHERE LOWER(email) = LOWER($1)', [email]);
+};
+
+export const findPendingByEmail = async (email: string) => {
+  const result = await pool.query(
+    'SELECT * FROM pending_registrations WHERE LOWER(email) = LOWER($1)',
+    [email]
+  );
+  return result.rows[0];
+};
+
+export const takePendingRegistration = async (tokenHash: string) => {
+  const result = await pool.query(
+    `DELETE FROM pending_registrations
+     WHERE verification_token = $1 AND expires_at > NOW()
+     RETURNING *`,
+    [tokenHash]
+  );
+  return result.rows[0];
+};
+
+export const createVerifiedUser = async (name: string, email: string, hashedPassword: string) => {
+  const result = await pool.query(
+    `INSERT INTO users (name, email, password, is_verified, verification_token)
+     VALUES ($1, $2, $3, TRUE, NULL)
+     RETURNING id, name, email, role`,
+    [name, email, hashedPassword]
   );
   return result.rows[0];
 };

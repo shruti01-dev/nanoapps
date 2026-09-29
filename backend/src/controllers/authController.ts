@@ -3,12 +3,17 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import {
   findUserByEmail,
-  createUser,
   verifyUserEmail,
   setResetToken,
   findUserByValidResetToken,
   updatePasswordAndClearToken,
   setVerificationToken,
+  deleteUnverifiedUser,
+  savePendingRegistration,
+  deletePendingRegistration,
+  findPendingByEmail,
+  takePendingRegistration,
+  createVerifiedUser,
 } from '../models/userModel';
 import { createRawToken, hashToken } from '../utils/tokens';
 import { frontendUrl, mailIsConfigured, MailError, sendEmail } from '../utils/email';
@@ -48,24 +53,23 @@ export const registerUser = async (req: Request, res: Response) => {
     if (existingUser?.is_verified) {
       return res.status(400).json({ message: 'User already exists' });
     }
+    if (existingUser) await deleteUnverifiedUser(address);
 
     const rawToken = createRawToken();
-    if (existingUser) {
-      await setVerificationToken(existingUser.id, hashToken(rawToken));
-    } else {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      await createUser(name.trim(), address, hashedPassword, hashToken(rawToken));
-    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await savePendingRegistration(name.trim(), address, hashedPassword, hashToken(rawToken), expiresAt);
 
     try {
       await sendVerificationEmail(address, rawToken);
     } catch (error) {
+      await deletePendingRegistration(address);
       if (!(error instanceof MailError)) throw error;
       return res.status(error.status).json({ message: error.message });
     }
 
-    res.status(existingUser ? 200 : 201).json({
-      message: 'Check your email for a verification link, then log in.',
+    res.status(200).json({
+      message: 'Check your email for a verification link, then log in. The account is created when you open that link.',
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -114,6 +118,13 @@ export const verifyEmail = async (req: Request, res: Response) => {
     if (!token) {
       return res.status(400).json({ message: 'Invalid or expired verification link' });
     }
+
+    const pending = await takePendingRegistration(hashToken(token));
+    if (pending) {
+      await createVerifiedUser(pending.name, pending.email, pending.password);
+      return res.json({ message: 'Email verified successfully. You can log in now.' });
+    }
+
     const user = await verifyUserEmail(hashToken(token));
 
     if (!user) {
@@ -132,11 +143,22 @@ export const resendVerification = async (req: Request, res: Response) => {
     const generic = { message: 'If that email is unverified, a new link has been sent.' };
     if (!email) return res.json(generic);
 
+    const pending = await findPendingByEmail(email);
     const user = await findUserByEmail(email);
-    if (!user || user.is_verified) return res.json(generic);
+    if (!pending && (!user || user.is_verified)) return res.json(generic);
 
     const rawToken = createRawToken();
-    await setVerificationToken(user.id, hashToken(rawToken));
+    if (pending) {
+      await savePendingRegistration(
+        pending.name,
+        pending.email,
+        pending.password,
+        hashToken(rawToken),
+        new Date(Date.now() + 24 * 60 * 60 * 1000)
+      );
+    } else {
+      await setVerificationToken(user.id, hashToken(rawToken));
+    }
     await sendVerificationEmail(email, rawToken);
     res.json(generic);
   } catch (error: any) {
