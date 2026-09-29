@@ -26,26 +26,28 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
     );
   }
 
-  const port = Number(process.env.SMTP_PORT || 465);
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port,
-    secure: process.env.SMTP_SECURE === 'true' || port === 465,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
+  const user = process.env.SMTP_USER?.trim() || '';
+  const pass = (process.env.SMTP_PASS || '').replace(/\s/g, '');
+  const host = process.env.SMTP_HOST || '';
+  const gmail = host.includes('gmail.com');
+  const configuredFrom = process.env.EMAIL_FROM || '';
+  const from = gmail && !configuredFrom.includes(user) ? user : configuredFrom || user;
+  const port = Number(process.env.SMTP_PORT || (gmail ? 465 : 587));
+
+  const transporter = gmail
+    ? nodemailer.createTransport({ service: 'gmail', auth: { user, pass } })
+    : nodemailer.createTransport({
+        host,
+        port,
+        secure: process.env.SMTP_SECURE === 'true' || port === 465,
+        auth: { user, pass },
+      });
 
   try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.SMTP_USER,
-      to,
-      subject,
-      text,
-    });
+    await transporter.sendMail({ from, to, subject, text });
   } catch (error) {
-    console.error('Email delivery failed:', error instanceof Error ? error.message : error);
-    throw new MailError('The email could not be delivered. Check the mailbox settings.');
+    const reason = error instanceof Error ? error.message : 'Unknown mail error';
+    console.error('Email delivery failed:', reason);
+    throw new MailError(`The email could not be delivered. ${reason}`);
   }
 };

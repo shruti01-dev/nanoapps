@@ -142,7 +142,8 @@ export const resendVerification = async (req: Request, res: Response) => {
     await sendVerificationEmail(email, rawToken);
     res.json(generic);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    const status = error instanceof MailError ? error.status : 500;
+    res.status(status).json({ message: error.message || 'Could not send the verification email.' });
   }
 };
 
