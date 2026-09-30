@@ -1,10 +1,19 @@
 import nodemailer from 'nodemailer';
 import dns from 'dns';
 
-dns.setDefaultResultOrder('ipv4first');
+const resolveIpv4 = async (hostname: string) => {
+  try {
+    const records = await dns.promises.resolve4(hostname);
+    if (records[0]) return records[0];
+  } catch {
+    // Some hosts, including Render, answer Gmail with IPv6 only.
+  }
 
-const lookupIpv4 = (hostname: string, _options: dns.LookupOptions, callback: (err: NodeJS.ErrnoException | null, address: string, family: number) => void) => {
-  dns.lookup(hostname, { family: 4 }, callback);
+  const lookedUp = await dns.promises.lookup(hostname, { family: 4 });
+  if (!lookedUp.address || lookedUp.address.includes(':')) {
+    throw new MailError('The mailbox server has no reachable IPv4 address.');
+  }
+  return lookedUp.address;
 };
 
 const publicSite = 'https://nanoapps.vercel.app';
@@ -47,16 +56,17 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
   const port = Number(process.env.SMTP_PORT || (gmail ? 465 : 587));
 
   const timeouts = { connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 20000 };
-  const options = {
-    host: gmail ? 'smtp.gmail.com' : host,
+  const hostname = gmail ? 'smtp.gmail.com' : host;
+  const address = await resolveIpv4(hostname);
+  const transporter = nodemailer.createTransport({
+    host: address,
     port: gmail ? 587 : port,
     secure: gmail ? false : process.env.SMTP_SECURE === 'true' || port === 465,
-    requireTLS: gmail || undefined,
-    lookup: lookupIpv4,
+    requireTLS: gmail,
+    tls: { servername: hostname },
     auth: { user, pass },
     ...timeouts,
-  };
-  const transporter = nodemailer.createTransport(options as Parameters<typeof nodemailer.createTransport>[0]);
+  });
 
   try {
     await transporter.sendMail({ from, to, subject, text });
