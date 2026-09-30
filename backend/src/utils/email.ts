@@ -1,4 +1,11 @@
 import nodemailer from 'nodemailer';
+import dns from 'dns';
+
+dns.setDefaultResultOrder('ipv4first');
+
+const lookupIpv4 = (hostname: string, _options: dns.LookupOptions, callback: (err: NodeJS.ErrnoException | null, address: string, family: number) => void) => {
+  dns.lookup(hostname, { family: 4 }, callback);
+};
 
 const publicSite = 'https://nanoapps.vercel.app';
 
@@ -46,6 +53,7 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
         port: 587,
         secure: false,
         requireTLS: true,
+        lookup: lookupIpv4,
         auth: { user, pass },
         ...timeouts,
       })
@@ -53,6 +61,7 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
         host,
         port,
         secure: process.env.SMTP_SECURE === 'true' || port === 465,
+        lookup: lookupIpv4,
         auth: { user, pass },
         ...timeouts,
       });

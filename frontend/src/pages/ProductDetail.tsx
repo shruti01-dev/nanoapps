@@ -4,7 +4,6 @@ import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { getDownloadUrl, getProduct } from '../api/products'
 import { useAuth } from '../context/AuthContext'
-import { payForProduct } from '../lib/checkout'
 import { priceLabel } from '../lib/format'
 import type { CatalogProduct } from '../api/types'
 import ImageCompressor from '../tools/ImageCompressor'
@@ -25,8 +24,6 @@ export default function ProductDetail() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [loading, setLoading] = useState(true)
-  const [paying, setPaying] = useState(false)
-  const [revision, setRevision] = useState(0)
 
   useEffect(() => {
     if (!slug) return
@@ -49,33 +46,19 @@ export default function ProductDetail() {
     return () => {
       active = false
     }
-  }, [slug, user?.id, revision])
+  }, [slug, user?.id])
 
-  const buy = async () => {
+  const buy = () => {
     if (!product) return
     if (!user) {
       navigate(`/login?next=${encodeURIComponent(window.location.pathname)}`)
       return
     }
-    setError('')
-    setNotice('')
-    setPaying(true)
-    try {
-      await payForProduct(product.id)
-      setNotice(product.is_free ? 'This tool is ready to use.' : 'Payment received.')
-      setRevision((value) => value + 1)
-    } catch (err: any) {
-      const message = err?.message === 'Payment cancelled'
-        ? 'Payment cancelled.'
-        : err.response?.data?.message || err.message || 'Payment failed.'
-      setError(message)
-    } finally {
-      setPaying(false)
-    }
+    if (!product.is_free) navigate(`/payment/${product.slug}`)
   }
 
   const download = async (platform: string) => {
-    if (!product) return
+    if (!product || !hasAccess) return
     setError('')
     try {
       const { data } = await getDownloadUrl(product.id, platform)
@@ -112,30 +95,49 @@ export default function ProductDetail() {
               )}
 
               <div className="mt-6 flex flex-wrap gap-3">
-                {!hasAccess && (
+                {!hasAccess && !product.is_free && (
                   <button
                     type="button"
                     onClick={buy}
-                    disabled={paying}
-                    className="bg-ink px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint disabled:opacity-60"
+                    className="bg-ink px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint"
                   >
-                    {paying ? 'Opening checkout…' : product.is_free ? 'Use this tool' : 'Buy now'}
+                    Pay now
                   </button>
                 )}
-                {hasAccess && product.type === 'desktop' && product.platforms.length === 0 && (
-                  <p className="text-sm text-ink/60">No files uploaded yet.</p>
+                {!hasAccess && product.is_free && (
+                  <button
+                    type="button"
+                    onClick={buy}
+                    className="bg-ink px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint"
+                  >
+                    Use this tool
+                  </button>
                 )}
-                {hasAccess && product.type === 'desktop' &&
-                  (product.platforms.length > 0 ? product.platforms : product.is_free ? ['windows'] : []).map((platform) => (
+                {!product.is_free &&
+                  (['windows', 'mac'] as const).map((platform) => (
+                    <button
+                      key={platform}
+                      type="button"
+                      disabled={!hasAccess}
+                      onClick={() => download(platform)}
+                      className={
+                        hasAccess
+                          ? 'border border-ink px-4 py-3 text-sm font-medium text-ink transition hover:border-teal hover:text-teal'
+                          : 'cursor-not-allowed border border-line px-4 py-3 text-sm font-medium text-ink/40'
+                      }
+                    >
+                      Download for {platform === 'windows' ? 'Windows' : 'Mac'}
+                    </button>
+                  ))}
+                {hasAccess && product.is_free && product.type === 'desktop' &&
+                  (product.platforms.length > 0 ? product.platforms : ['windows']).map((platform) => (
                     <button
                       key={platform}
                       type="button"
                       onClick={() => download(platform)}
                       className="border border-ink px-4 py-3 text-sm font-medium text-ink transition hover:border-teal hover:text-teal"
                     >
-                      {product.is_free && product.platforms.length === 0
-                        ? 'Download'
-                        : `Download for ${platform === 'windows' ? 'Windows' : 'Mac'}`}
+                      {product.platforms.length === 0 ? 'Download' : `Download for ${platform === 'windows' ? 'Windows' : 'Mac'}`}
                     </button>
                   ))}
                 {!user && (
@@ -144,6 +146,9 @@ export default function ProductDetail() {
                   </Link>
                 )}
               </div>
+              {!product.is_free && !hasAccess && (
+                <p className="mt-3 text-xs text-ink/50">Windows and Mac downloads stay locked until payment is complete.</p>
+              )}
 
               {notice && <p className="mt-4 text-sm text-teal">{notice}</p>}
               {error && product && <p className="mt-4 text-sm text-red-600">{error}</p>}

@@ -23,7 +23,10 @@ const upload = multer({
 });
 
 export const handleUpload = (req: AuthRequest, res: Response, next: NextFunction) => {
-  upload.single('file')(req, res, (err: unknown) => {
+  upload.fields([
+    { name: 'file', maxCount: 1 },
+    { name: 'files', maxCount: 200 },
+  ])(req, res, (err: unknown) => {
     if (err) {
       const message = err instanceof Error ? err.message : 'Upload failed';
       return res.status(400).json({ message });
@@ -136,9 +139,7 @@ export const getProduct = async (req: AuthRequest, res: Response) => {
     }
 
     const platforms = await getProductPlatforms(product.id);
-    const hasAccess = req.user
-      ? req.user.role === 'admin' || (await userHasAccess(req.user.id, product.id))
-      : false;
+    const hasAccess = req.user ? await userHasAccess(req.user.id, product.id) : false;
     const license = hasAccess && req.user ? await getLicense(req.user.id, product.id) : null;
 
     res.json({
@@ -191,29 +192,38 @@ export const uploadProductFile = async (req: AuthRequest, res: Response) => {
       return res.status(503).json({ message: 'File storage is not configured' });
     }
 
-    const platform = String(req.body.platform || '');
-    const version = String(req.body.version || '').trim();
-    if (platform !== 'windows' && platform !== 'mac') {
-      return res.status(400).json({ message: 'Platform must be windows or mac' });
+    const platform = String(req.body.platform || (product.type === 'web' ? 'web' : ''));
+    const version = String(req.body.version || '1.0.0').trim();
+    if (platform !== 'windows' && platform !== 'mac' && platform !== 'web') {
+      return res.status(400).json({ message: 'Platform must be windows, mac, or web' });
     }
-    if (!version) return res.status(400).json({ message: 'Version is required' });
-    if (!req.file) return res.status(400).json({ message: 'Choose a file to upload' });
 
-    const safeName = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const storagePath = `${productId}/${platform}/${version}/${Date.now()}-${safeName}`;
-    const { error } = await supabaseStorage.storage.from('product-files').upload(storagePath, req.file.buffer, {
-      contentType: req.file.mimetype || 'application/octet-stream',
-      upsert: false,
-    });
-    if (error) return res.status(500).json({ message: error.message });
+    const uploaded = req.files as { file?: Express.Multer.File[]; files?: Express.Multer.File[] } | undefined;
+    const files = [...(uploaded?.file || []), ...(uploaded?.files || [])];
+    if (files.length === 0) return res.status(400).json({ message: 'Choose a file or folder to upload' });
 
-    const file = await addProductFile({
-      product_id: productId,
-      platform,
-      version,
-      storage_path: storagePath,
-    });
-    res.status(201).json(file);
+    const saved = [];
+    for (const file of files) {
+      const relative = file.originalname.replace(/\\/g, '/');
+      const safeName = relative
+        .split('/')
+        .map((part) => part.replace(/[^a-zA-Z0-9._-]/g, '_'))
+        .join('/');
+      const storagePath = `${productId}/${platform}/${version}/${Date.now()}-${safeName}`;
+      const { error } = await supabaseStorage.storage.from('product-files').upload(storagePath, file.buffer, {
+        contentType: file.mimetype || 'application/octet-stream',
+        upsert: false,
+      });
+      if (error) return res.status(500).json({ message: error.message });
+      saved.push(await addProductFile({
+        product_id: productId,
+        platform,
+        version,
+        storage_path: storagePath,
+      }));
+    }
+
+    res.status(201).json(saved);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
@@ -224,20 +234,16 @@ export const getDownloadUrl = async (req: AuthRequest, res: Response) => {
     const productId = Number(req.params.productId);
     const platform = req.params.platform;
     const userId = req.user!.id;
-    const isAdmin = req.user!.role === 'admin';
 
     const product = await getProductById(productId);
     if (!product) return res.status(404).json({ message: 'Product not found' });
 
-    if (product.is_free) {
-      if (!product.free_download_url) {
-        return res.status(404).json({ message: 'No download link set for this product' });
-      }
+    const owns = product.is_free || (await userHasAccess(userId, productId));
+    if (!owns) return res.status(403).json({ message: 'You have not purchased this product' });
+
+    if (product.free_download_url) {
       return res.json({ downloadUrl: product.free_download_url });
     }
-
-    const owns = isAdmin || (await userHasAccess(userId, productId));
-    if (!owns) return res.status(403).json({ message: 'You have not purchased this product' });
 
     if (!supabaseStorage) return res.status(503).json({ message: 'File storage is not configured' });
 

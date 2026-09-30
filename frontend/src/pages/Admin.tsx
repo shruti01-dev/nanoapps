@@ -36,7 +36,9 @@ export default function Admin() {
   const [uploadProductId, setUploadProductId] = useState<number | null>(null)
   const [platform, setPlatform] = useState('windows')
   const [version, setVersion] = useState('')
-  const [file, setFile] = useState<File | null>(null)
+  const [uploadFiles, setUploadFiles] = useState<File[]>([])
+  const [uploadMode, setUploadMode] = useState<'link' | 'file' | 'folder'>('link')
+  const [linkUrl, setLinkUrl] = useState('')
   const [grantEmail, setGrantEmail] = useState('')
   const [grantProductId, setGrantProductId] = useState<number | null>(null)
 
@@ -60,10 +62,10 @@ export default function Admin() {
     slug: slugify(form.name),
     description: form.description,
     type: form.type,
-    price: form.isFree ? 0 : parseFloat(form.price || '0'),
-    pricing_model: form.pricingModel,
+    price: form.pricingModel === 'free' ? 0 : parseFloat(form.price || '0'),
+    pricing_model: form.pricingModel === 'subscription' ? 'subscription' : 'one_time',
     billing_period: form.billingPeriod,
-    is_free: form.isFree,
+    is_free: form.pricingModel === 'free',
     free_download_url: form.freeDownloadUrl,
     razorpay_plan_id: form.planId,
     is_active: form.isActive,
@@ -92,7 +94,7 @@ export default function Admin() {
       description: product.description,
       type: product.type,
       price: String(product.price),
-      pricingModel: product.pricing_model,
+      pricingModel: product.is_free ? 'free' : product.pricing_model,
       billingPeriod: product.billing_period || 'monthly',
       isFree: product.is_free,
       freeDownloadUrl: product.free_download_url || '',
@@ -101,23 +103,57 @@ export default function Admin() {
     })
   }
 
+  const selectedUpload = products.find((product) => product.id === uploadProductId)
+
+  const handleSaveLink = async (event: FormEvent) => {
+    event.preventDefault()
+    setError('')
+    setSuccess('')
+    if (!selectedUpload) {
+      setError('Select a tool or software first.')
+      return
+    }
+    try {
+      await updateProduct(selectedUpload.id, {
+        name: selectedUpload.name,
+        slug: selectedUpload.slug,
+        description: selectedUpload.description,
+        type: selectedUpload.type,
+        price: Number(selectedUpload.price),
+        pricing_model: selectedUpload.pricing_model,
+        billing_period: selectedUpload.billing_period || 'monthly',
+        is_free: selectedUpload.is_free,
+        free_download_url: linkUrl,
+        razorpay_plan_id: selectedUpload.razorpay_plan_id || '',
+        is_active: selectedUpload.is_active,
+      })
+      setSuccess('Link saved.')
+      setLinkUrl('')
+      await load()
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Could not save the link.')
+    }
+  }
+
   const handleUploadFile = async (event: FormEvent) => {
     event.preventDefault()
     setError('')
     setSuccess('')
-    if (!uploadProductId || !file) {
-      setError('Select a product and a file first.')
+    if (!selectedUpload || uploadFiles.length === 0) {
+      setError('Select a product and a file or folder first.')
       return
     }
     try {
       const formData = new FormData()
-      formData.append('file', file)
+      uploadFiles.forEach((uploadFile) => {
+        formData.append('files', uploadFile, uploadFile.webkitRelativePath || uploadFile.name)
+      })
       formData.append('platform', platform)
-      formData.append('version', version)
-      await uploadProductFile(uploadProductId, formData)
-      setSuccess('File uploaded.')
+      formData.append('version', version || '1.0.0')
+      await uploadProductFile(selectedUpload.id, formData)
+      setSuccess('Upload saved.')
       setVersion('')
-      setFile(null)
+      setUploadFiles([])
       await load()
     } catch (err: any) {
       setError(err.response?.data?.message || 'Upload failed.')
@@ -167,10 +203,15 @@ export default function Admin() {
                 <textarea className={field} placeholder="Description" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
                 <div className="grid grid-cols-2 gap-3">
                   <select className={field} value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-                    <option value="web">Web tool</option>
-                    <option value="desktop">Desktop software</option>
+                    <option value="web">Tools</option>
+                    <option value="desktop">Software</option>
                   </select>
-                  <select className={field} value={form.pricingModel} onChange={(e) => setForm({ ...form, pricingModel: e.target.value })}>
+                  <select
+                    className={field}
+                    value={form.pricingModel}
+                    onChange={(e) => setForm({ ...form, pricingModel: e.target.value, isFree: e.target.value === 'free' })}
+                  >
+                    <option value="free">Free</option>
                     <option value="one_time">One-time</option>
                     <option value="subscription">Subscription</option>
                   </select>
@@ -184,13 +225,7 @@ export default function Admin() {
                     <input className={field} placeholder="Razorpay plan id" value={form.planId} onChange={(e) => setForm({ ...form, planId: e.target.value })} />
                   </div>
                 )}
-                <label className="flex items-center gap-2 text-sm text-ink/80">
-                  <input type="checkbox" checked={form.isFree} onChange={(e) => setForm({ ...form, isFree: e.target.checked })} />
-                  Free
-                </label>
-                {form.isFree ? (
-                  <input className={field} placeholder="Public download URL (desktop only)" value={form.freeDownloadUrl} onChange={(e) => setForm({ ...form, freeDownloadUrl: e.target.value })} />
-                ) : (
+                {form.pricingModel !== 'free' && (
                   <input className={field} type="number" min="1" step="0.01" placeholder="Price (INR)" required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
                 )}
                 {editingId && (
@@ -214,30 +249,73 @@ export default function Admin() {
 
             <div className="flex flex-col gap-10">
               <div className="bracket-card bg-paper p-6">
-                <h2 className="font-display text-lg font-semibold text-ink">Upload software file</h2>
-                <form onSubmit={handleUploadFile} className="mt-5 flex flex-col gap-3">
-                  <select className={field} value={uploadProductId ?? ''} onChange={(e) => setUploadProductId(Number(e.target.value))}>
-                    <option value="">Select product</option>
-                    {products.filter((product) => product.type === 'desktop').map((product) => (
-                      <option key={product.id} value={product.id}>{product.name}</option>
+                <h2 className="font-display text-lg font-semibold text-ink">Upload or add a link</h2>
+                <form onSubmit={handleSaveLink} className="mt-5 flex flex-col gap-3">
+                  <select className={field} value={uploadProductId ?? ''} onChange={(e) => {
+                    const id = Number(e.target.value)
+                    setUploadProductId(id)
+                    const product = products.find((item) => item.id === id)
+                    setLinkUrl(product?.free_download_url || '')
+                    setUploadFiles([])
+                  }}>
+                    <option value="">Select tool or software</option>
+                    {products.map((product) => (
+                      <option key={product.id} value={product.id}>
+                        {product.name} ({product.type === 'web' ? 'Tools' : 'Software'})
+                      </option>
                     ))}
                   </select>
-                  <div className="grid grid-cols-2 gap-3">
-                    <select className={field} value={platform} onChange={(e) => setPlatform(e.target.value)}>
-                      <option value="windows">Windows</option>
-                      <option value="mac">Mac</option>
-                    </select>
-                    <input className={field} placeholder="Version (e.g. 1.0.0)" required value={version} onChange={(e) => setVersion(e.target.value)} />
-                  </div>
-                  <input type="file" required onChange={(e) => setFile(e.target.files?.[0] || null)} className="text-sm text-ink/70" />
-                  <button type="submit" className="mt-2 border border-ink px-4 py-2 text-sm font-medium text-ink transition hover:border-teal hover:text-teal">
-                    Upload file
-                  </button>
+                  <select className={field} value={platform} onChange={(e) => setPlatform(e.target.value)}>
+                    <option value="windows">Windows</option>
+                    <option value="mac">Mac</option>
+                  </select>
+                  <select className={field} value={uploadMode} onChange={(e) => {
+                    setUploadMode(e.target.value as 'link' | 'file' | 'folder')
+                    setUploadFiles([])
+                  }}>
+                    <option value="link">Add a link</option>
+                    <option value="file">Upload a file</option>
+                    <option value="folder">Upload a folder</option>
+                  </select>
+                  {uploadMode === 'link' ? (
+                    <>
+                      <input
+                        className={field}
+                        placeholder="URL — opens this tool or software"
+                        value={linkUrl}
+                        onChange={(e) => setLinkUrl(e.target.value)}
+                      />
+                      <button type="submit" className="border border-ink px-4 py-2 text-sm font-medium text-ink transition hover:border-teal hover:text-teal">
+                        Save URL
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <input className={field} placeholder="Version (e.g. 1.0.0)" value={version} onChange={(e) => setVersion(e.target.value)} />
+                      <input
+                        key={uploadMode}
+                        className="text-sm text-ink/70"
+                        type="file"
+                        multiple={uploadMode === 'folder'}
+                        {...(uploadMode === 'folder' ? { webkitdirectory: '', directory: '' } : {})}
+                        onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
+                      />
+                      {uploadFiles.length > 0 && (
+                        <p className="text-xs text-ink/50">{uploadFiles.length} selected</p>
+                      )}
+                      <button type="button" onClick={handleUploadFile} className="border border-ink px-4 py-2 text-sm font-medium text-ink transition hover:border-teal hover:text-teal">
+                        Upload
+                      </button>
+                    </>
+                  )}
                 </form>
               </div>
 
               <div className="bracket-card bg-paper p-6">
                 <h2 className="font-display text-lg font-semibold text-ink">Grant access</h2>
+                <p className="mt-2 text-sm text-ink/60">
+                  Use this when you want to unlock a product for someone without a payment. Type the email of an account that already registered, choose the product, then grant access. That person can download it on their next login.
+                </p>
                 <form onSubmit={handleGrant} className="mt-5 flex flex-col gap-3">
                   <input className={field} type="email" required placeholder="Customer email" value={grantEmail} onChange={(e) => setGrantEmail(e.target.value)} />
                   <select className={field} value={grantProductId ?? ''} onChange={(e) => setGrantProductId(Number(e.target.value))}>
@@ -274,7 +352,7 @@ export default function Admin() {
                   {products.map((product) => (
                     <tr key={product.id} className="border-b border-line last:border-0">
                       <td className="px-4 py-3 text-ink">{product.name}</td>
-                      <td className="px-4 py-3 text-ink/70">{product.type}</td>
+                      <td className="px-4 py-3 text-ink/70">{product.type === 'web' ? 'Tools' : 'Software'}</td>
                       <td className="px-4 py-3 text-ink/70">{priceLabel(product)}</td>
                       <td className="px-4 py-3 text-ink/50">{product.is_active ? 'Listed' : 'Hidden'}</td>
                       <td className="px-4 py-3 text-right">
