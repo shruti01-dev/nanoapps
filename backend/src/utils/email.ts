@@ -1,19 +1,36 @@
 import nodemailer from 'nodemailer';
 import dns from 'dns';
+import { Resolver } from 'dns/promises';
+
+const ipv4From = async (hostname: string, server?: string) => {
+  if (!server) {
+    const records = await dns.promises.resolve4(hostname);
+    return records[0];
+  }
+  const resolver = new Resolver();
+  resolver.setServers([server]);
+  const records = await resolver.resolve4(hostname);
+  return records[0];
+};
 
 const resolveIpv4 = async (hostname: string) => {
-  try {
-    const records = await dns.promises.resolve4(hostname);
-    if (records[0]) return records[0];
-  } catch {
-    // Some hosts, including Render, answer Gmail with IPv6 only.
+  for (const server of ['8.8.8.8', '1.1.1.1', undefined]) {
+    try {
+      const address = await ipv4From(hostname, server);
+      if (address && !address.includes(':')) return address;
+    } catch {
+      // Render's own DNS often has no IPv4 answer for Gmail.
+    }
   }
 
-  const lookedUp = await dns.promises.lookup(hostname, { family: 4 });
-  if (!lookedUp.address || lookedUp.address.includes(':')) {
-    throw new MailError('The mailbox server has no reachable IPv4 address.');
+  try {
+    const lookedUp = await dns.promises.lookup(hostname, { family: 4 });
+    if (lookedUp.address && !lookedUp.address.includes(':')) return lookedUp.address;
+  } catch {
+    // No system IPv4 result either.
   }
-  return lookedUp.address;
+
+  throw new MailError('The mailbox server has no reachable IPv4 address.');
 };
 
 const publicSite = 'https://nanoapps.vercel.app';
@@ -57,18 +74,18 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
 
   const timeouts = { connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 20000 };
   const hostname = gmail ? 'smtp.gmail.com' : host;
-  const address = await resolveIpv4(hostname);
-  const transporter = nodemailer.createTransport({
-    host: address,
-    port: gmail ? 587 : port,
-    secure: gmail ? false : process.env.SMTP_SECURE === 'true' || port === 465,
-    requireTLS: gmail,
-    tls: { servername: hostname },
-    auth: { user, pass },
-    ...timeouts,
-  });
 
   try {
+    const address = await resolveIpv4(hostname);
+    const transporter = nodemailer.createTransport({
+      host: address,
+      port: gmail ? 587 : port,
+      secure: gmail ? false : process.env.SMTP_SECURE === 'true' || port === 465,
+      requireTLS: gmail,
+      tls: { servername: hostname },
+      auth: { user, pass },
+      ...timeouts,
+    });
     await transporter.sendMail({ from, to, subject, text });
   } catch (error) {
     const reason = error instanceof Error ? error.message : 'Unknown mail error';
