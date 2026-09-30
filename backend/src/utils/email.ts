@@ -47,24 +47,16 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
   const port = Number(process.env.SMTP_PORT || (gmail ? 465 : 587));
 
   const timeouts = { connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 20000 };
-  const transporter = gmail
-    ? nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
-        requireTLS: true,
-        lookup: lookupIpv4,
-        auth: { user, pass },
-        ...timeouts,
-      })
-    : nodemailer.createTransport({
-        host,
-        port,
-        secure: process.env.SMTP_SECURE === 'true' || port === 465,
-        lookup: lookupIpv4,
-        auth: { user, pass },
-        ...timeouts,
-      });
+  const options = {
+    host: gmail ? 'smtp.gmail.com' : host,
+    port: gmail ? 587 : port,
+    secure: gmail ? false : process.env.SMTP_SECURE === 'true' || port === 465,
+    requireTLS: gmail || undefined,
+    lookup: lookupIpv4,
+    auth: { user, pass },
+    ...timeouts,
+  };
+  const transporter = nodemailer.createTransport(options as Parameters<typeof nodemailer.createTransport>[0]);
 
   try {
     await transporter.sendMail({ from, to, subject, text });
