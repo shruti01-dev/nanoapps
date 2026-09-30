@@ -22,7 +22,6 @@ export default function ProductDetail() {
   const [hasAccess, setHasAccess] = useState(false)
   const [licenseKey, setLicenseKey] = useState<string | null>(null)
   const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -150,7 +149,6 @@ export default function ProductDetail() {
                 <p className="mt-3 text-xs text-ink/50">Windows and Mac downloads stay locked until payment is complete.</p>
               )}
 
-              {notice && <p className="mt-4 text-sm text-teal">{notice}</p>}
               {error && product && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
               {hasAccess && product.type === 'web' && (
