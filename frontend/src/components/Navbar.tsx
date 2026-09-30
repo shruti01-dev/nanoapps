@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 const links = [
   { to: '/tools', label: 'Tools' },
   { to: '/software', label: 'Software' },
-  { to: '/#pricing', label: 'Pricing' },
+  { to: '/pricing', label: 'Pricing' },
 ]
 
 export default function Navbar() {

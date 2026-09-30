@@ -45,9 +45,9 @@ export default function Landing() {
               <a href="#products" className="bg-ink px-5 py-3 text-sm font-medium text-paper transition hover:bg-blueprint">
                 Browse tools
               </a>
-              <a href="#pricing" className="border border-ink px-5 py-3 text-sm font-medium text-ink transition hover:border-teal hover:text-teal">
+              <Link to="/pricing" className="border border-ink px-5 py-3 text-sm font-medium text-ink transition hover:border-teal hover:text-teal">
                 See pricing
-              </a>
+              </Link>
             </div>
           </div>
           <ToolPegboard />

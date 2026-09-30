@@ -15,6 +15,7 @@ import TermsOfService from './pages/TermsOfService'
 import RefundPolicy from './pages/RefundPolicy'
 import About from './pages/About'
 import Contact from './pages/Contact'
+import Pricing from './pages/Pricing'
 import Payment from './pages/Payment'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -35,6 +36,8 @@ function App() {
       <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="/refund-policy" element={<RefundPolicy />} />
       <Route path="/about" element={<About />} />
+      <Route path="/contact" element={<Contact />} />
+      <Route path="/pricing" element={<Pricing />} />
       <Route
         path="/payment/:slug"
         element={
