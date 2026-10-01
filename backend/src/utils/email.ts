@@ -42,7 +42,30 @@ export const frontendUrl = () => {
 };
 
 export const mailIsConfigured = () =>
-  Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+  Boolean(process.env.RESEND_API_KEY || (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS));
+
+const sendWithResend = async (to: string, subject: string, text: string) => {
+  const from = process.env.RESEND_FROM || 'Nanoapps <onboarding@resend.dev>';
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ from, to: [to], subject, text }),
+  });
+
+  if (!response.ok) {
+    let reason = `Resend returned ${response.status}`;
+    try {
+      const body = (await response.json()) as { message?: string };
+      if (body.message) reason = body.message;
+    } catch {
+      // The body was not JSON.
+    }
+    throw new MailError(`The email could not be delivered. ${reason}`);
+  }
+};
 
 export class MailError extends Error {
   status: number;
@@ -62,6 +85,17 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
       'The email could not be sent because the server mailbox is not configured.',
       503
     );
+  }
+
+  if (process.env.RESEND_API_KEY) {
+    try {
+      await sendWithResend(to, subject, text);
+    } catch (error) {
+      if (error instanceof MailError) throw error;
+      const reason = error instanceof Error ? error.message : 'Unknown mail error';
+      throw new MailError(`The email could not be delivered. ${reason}`);
+    }
+    return;
   }
 
   const user = process.env.SMTP_USER?.trim() || '';
