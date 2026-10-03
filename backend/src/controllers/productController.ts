@@ -4,6 +4,7 @@ import {
   ProductInput,
   addProductFile,
   createProduct as insertProduct,
+  deleteProductById,
   getAllProducts,
   getLatestProductFile,
   getProductById,
@@ -35,11 +36,23 @@ export const handleUpload = (req: AuthRequest, res: Response, next: NextFunction
   });
 };
 
+const parseFeatures = (value: unknown) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item || '').trim()).filter(Boolean);
+  }
+  return String(value || '')
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
 const toPublicProduct = (row: any, platforms: string[] = []) => ({
   id: row.id,
   name: row.name,
   slug: row.slug,
   description: row.description || '',
+  tagline: row.tagline || '',
+  features: parseFeatures(row.features),
   type: row.type,
   price: Number(row.price),
   pricing_model: row.pricing_model,
@@ -52,8 +65,16 @@ const toPublicProduct = (row: any, platforms: string[] = []) => ({
 const toAdminProduct = (row: any, platforms: string[] = []) => ({
   ...toPublicProduct(row, platforms),
   free_download_url: row.free_download_url,
+  windows_download_url: row.windows_download_url,
+  mac_download_url: row.mac_download_url,
   razorpay_plan_id: row.razorpay_plan_id,
 });
+
+const readOptionalUrl = (body: any, existing: any, key: string) => {
+  if (body[key] === undefined) return existing?.[key] ?? null;
+  const value = String(body[key] || '').trim();
+  return value || null;
+};
 
 const withPlatforms = async (rows: any[], asAdmin: boolean) =>
   Promise.all(
@@ -67,17 +88,22 @@ const readProductInput = (body: any, existing?: any): { error?: string; value?: 
   const name = String(body.name ?? existing?.name ?? '').trim();
   const slug = String(body.slug ?? existing?.slug ?? '').trim().toLowerCase();
   const description = String(body.description ?? existing?.description ?? '').trim();
+  const tagline =
+    body.tagline === undefined && existing
+      ? String(existing.tagline || '')
+      : String(body.tagline ?? '').trim();
+  const features =
+    body.features === undefined && existing
+      ? parseFeatures(existing.features).join('\n')
+      : parseFeatures(body.features).join('\n');
   const type = String(body.type ?? existing?.type ?? '');
   const pricingModel = String(body.pricing_model ?? existing?.pricing_model ?? '');
   const billingPeriod = String(body.billing_period ?? existing?.billing_period ?? 'monthly');
   const price = body.price === undefined && existing ? Number(existing.price) : Number(body.price);
   const isFree = body.is_free === undefined && existing ? Boolean(existing.is_free) : Boolean(body.is_free);
-  const freeDownloadUrl =
-    body.free_download_url === undefined && existing
-      ? existing.free_download_url
-      : body.free_download_url
-        ? String(body.free_download_url).trim()
-        : null;
+  const freeDownloadUrl = readOptionalUrl(body, existing, 'free_download_url');
+  const windowsDownloadUrl = readOptionalUrl(body, existing, 'windows_download_url');
+  const macDownloadUrl = readOptionalUrl(body, existing, 'mac_download_url');
   const planId =
     body.razorpay_plan_id === undefined && existing
       ? existing.razorpay_plan_id
@@ -104,11 +130,15 @@ const readProductInput = (body: any, existing?: any): { error?: string; value?: 
       name,
       slug,
       description,
+      tagline,
+      features,
       type,
       price,
       pricing_model: pricingModel,
       is_free: isFree,
       free_download_url: freeDownloadUrl,
+      windows_download_url: windowsDownloadUrl,
+      mac_download_url: macDownloadUrl,
       razorpay_plan_id: planId,
       billing_period: billingPeriod,
     },
@@ -183,6 +213,25 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const deleteProduct = async (req: AuthRequest, res: Response) => {
+  try {
+    const productId = Number(req.params.productId);
+    if (!Number.isFinite(productId)) return res.status(400).json({ message: 'Invalid product' });
+
+    const deleted = await deleteProductById(productId);
+    if (!deleted) return res.status(404).json({ message: 'Product not found' });
+
+    res.json({ message: `${deleted.name} deleted.`, id: deleted.id });
+  } catch (error: any) {
+    if (error?.code === '23503') {
+      return res.status(400).json({
+        message: 'This product still has orders or licenses linked to it, so it cannot be deleted yet.',
+      });
+    }
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const uploadProductFile = async (req: AuthRequest, res: Response) => {
   try {
     const productId = Number(req.params.productId);
@@ -241,14 +290,25 @@ export const getDownloadUrl = async (req: AuthRequest, res: Response) => {
     const owns = product.is_free || (await userHasAccess(userId, productId));
     if (!owns) return res.status(403).json({ message: 'You have not purchased this product' });
 
-    if (product.free_download_url) {
-      return res.json({ downloadUrl: product.free_download_url });
+    if (platform !== 'windows' && platform !== 'mac' && platform !== 'web') {
+      return res.status(400).json({ message: 'Platform must be windows, mac, or web' });
+    }
+
+    const platformUrl =
+      platform === 'windows'
+        ? product.windows_download_url
+        : platform === 'mac'
+          ? product.mac_download_url
+          : null;
+    const downloadUrl = platformUrl || product.free_download_url;
+    if (downloadUrl) {
+      return res.json({ downloadUrl });
     }
 
     if (!supabaseStorage) return res.status(503).json({ message: 'File storage is not configured' });
 
     const file = await getLatestProductFile(productId, platform);
-    if (!file) return res.status(404).json({ message: 'No file found for this platform' });
+    if (!file) return res.status(404).json({ message: `No ${platform} download is available yet` });
 
     const { data, error } = await supabaseStorage.storage.from('product-files').createSignedUrl(file.storage_path, 300);
     if (error || !data) {

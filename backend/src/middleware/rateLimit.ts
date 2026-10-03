@@ -6,4 +6,5 @@ export const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: 'Too many attempts. Try again later.' },
+  skip: () => process.env.NODE_ENV !== 'production',
 });

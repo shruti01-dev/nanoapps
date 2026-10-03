@@ -16,6 +16,10 @@ export const createProductsTable = async () => {
   `);
   await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_free BOOLEAN DEFAULT FALSE`);
   await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS free_download_url TEXT`);
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS windows_download_url TEXT`);
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS mac_download_url TEXT`);
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS tagline TEXT`);
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS features TEXT`);
   await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS razorpay_plan_id VARCHAR(100)`);
   await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS billing_period VARCHAR(20) DEFAULT 'monthly'`);
 };
@@ -38,11 +42,15 @@ export type ProductInput = {
   name: string;
   slug: string;
   description: string;
+  tagline: string;
+  features: string;
   type: string;
   price: number;
   pricing_model: string;
   is_free: boolean;
   free_download_url: string | null;
+  windows_download_url: string | null;
+  mac_download_url: string | null;
   razorpay_plan_id: string | null;
   billing_period: string;
 };
@@ -63,27 +71,44 @@ export const getAllProducts = async (type?: string, includeInactive = false) => 
 };
 
 export const getProductPlatforms = async (productId: number) => {
-  const result = await pool.query(
-    'SELECT DISTINCT platform FROM product_files WHERE product_id = $1',
-    [productId]
-  );
-  return result.rows.map((row) => row.platform as string);
+  const [files, product] = await Promise.all([
+    pool.query('SELECT DISTINCT platform FROM product_files WHERE product_id = $1', [productId]),
+    pool.query(
+      'SELECT windows_download_url, mac_download_url, free_download_url FROM products WHERE id = $1',
+      [productId]
+    ),
+  ]);
+
+  const platforms = new Set(files.rows.map((row) => row.platform as string));
+  const row = product.rows[0];
+  if (row?.windows_download_url) platforms.add('windows');
+  if (row?.mac_download_url) platforms.add('mac');
+  if (row?.free_download_url) {
+    if (!row.windows_download_url) platforms.add('windows');
+    if (!row.mac_download_url) platforms.add('mac');
+  }
+
+  return ['windows', 'mac', 'web'].filter((platform) => platforms.has(platform));
 };
 
 export const createProduct = async (data: ProductInput) => {
   const result = await pool.query(
     `INSERT INTO products
-      (name, slug, description, type, price, pricing_model, is_free, free_download_url, razorpay_plan_id, billing_period)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+      (name, slug, description, tagline, features, type, price, pricing_model, is_free, free_download_url, windows_download_url, mac_download_url, razorpay_plan_id, billing_period)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
     [
       data.name,
       data.slug,
       data.description,
+      data.tagline,
+      data.features,
       data.type,
       data.price,
       data.pricing_model,
       data.is_free,
       data.free_download_url,
+      data.windows_download_url,
+      data.mac_download_url,
       data.razorpay_plan_id,
       data.billing_period,
     ]
@@ -94,18 +119,23 @@ export const createProduct = async (data: ProductInput) => {
 export const updateProduct = async (productId: number, data: ProductInput & { is_active: boolean }) => {
   const result = await pool.query(
     `UPDATE products SET
-      name = $1, slug = $2, description = $3, type = $4, price = $5, pricing_model = $6,
-      is_free = $7, free_download_url = $8, razorpay_plan_id = $9, billing_period = $10, is_active = $11
-     WHERE id = $12 RETURNING *`,
+      name = $1, slug = $2, description = $3, tagline = $4, features = $5, type = $6, price = $7, pricing_model = $8,
+      is_free = $9, free_download_url = $10, windows_download_url = $11, mac_download_url = $12,
+      razorpay_plan_id = $13, billing_period = $14, is_active = $15
+     WHERE id = $16 RETURNING *`,
     [
       data.name,
       data.slug,
       data.description,
+      data.tagline,
+      data.features,
       data.type,
       data.price,
       data.pricing_model,
       data.is_free,
       data.free_download_url,
+      data.windows_download_url,
+      data.mac_download_url,
       data.razorpay_plan_id,
       data.billing_period,
       data.is_active,
@@ -143,41 +173,17 @@ export const getProductById = async (productId: number) => {
   return result.rows[0];
 };
 
+export const deleteProductById = async (productId: number) => {
+  const result = await pool.query('DELETE FROM products WHERE id = $1 RETURNING id, name, slug', [productId]);
+  return result.rows[0];
+};
+
 export const getProductBySlug = async (slug: string) => {
   const result = await pool.query('SELECT * FROM products WHERE slug = $1', [slug]);
   return result.rows[0];
 };
 
 export const ensureBuiltinTools = async () => {
-  const tools = [
-    {
-      name: 'Image Compressor',
-      slug: 'image-compressor',
-      description: 'Shrink image file sizes without a visible drop in quality.',
-      type: 'web',
-      price: 0,
-      pricing_model: 'one_time',
-      is_free: true,
-      free_download_url: null,
-      razorpay_plan_id: null,
-      billing_period: 'monthly',
-    },
-    {
-      name: 'Data Cleaner',
-      slug: 'data-cleaner',
-      description: 'Trim cells, drop empty rows, and remove duplicate rows from a CSV.',
-      type: 'web',
-      price: 0,
-      pricing_model: 'one_time',
-      is_free: true,
-      free_download_url: null,
-      razorpay_plan_id: null,
-      billing_period: 'monthly',
-    },
-  ];
-
-  for (const tool of tools) {
-    const existing = await getProductBySlug(tool.slug);
-    if (!existing) await createProduct(tool);
-  }
+  // Built-in browser demos are no longer auto-created.
+  // Desktop software such as SSA PDF Studio is managed from Admin.
 };

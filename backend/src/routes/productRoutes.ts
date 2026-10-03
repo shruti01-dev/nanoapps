@@ -3,6 +3,7 @@ import { adminOnly } from '../middleware/adminMiddleware';
 import { optionalProtect, protect } from '../middleware/authMiddleware';
 import {
   createProduct,
+  deleteProduct,
   getDownloadUrl,
   getMyProducts,
   getProduct,
@@ -22,6 +23,7 @@ router.get('/:productId/download/:platform', protect, getDownloadUrl);
 
 router.post('/', protect, adminOnly, createProduct);
 router.patch('/:productId', protect, adminOnly, updateProduct);
+router.delete('/:productId', protect, adminOnly, deleteProduct);
 router.post('/:productId/files', protect, adminOnly, handleUpload, uploadProductFile);
 router.post('/grant-access', protect, adminOnly, grantAccess);
 

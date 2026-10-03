@@ -37,8 +37,11 @@ const publicSite = 'https://nanoapps.vercel.app';
 
 export const frontendUrl = () => {
   const configured = (process.env.FRONTEND_URL || process.env.CLIENT_URL || '').replace(/\/$/, '');
-  if (!configured || configured.includes('localhost')) return publicSite;
-  return configured.split(',')[0];
+  const first = configured.split(',')[0]?.trim() || '';
+  if (!first) return publicSite;
+  // Local development should keep localhost links so verify/reset open on this machine.
+  if (first.includes('localhost') && process.env.NODE_ENV === 'production') return publicSite;
+  return first;
 };
 
 export const mailIsConfigured = () =>

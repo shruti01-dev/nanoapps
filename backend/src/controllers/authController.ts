@@ -25,8 +25,16 @@ const generateToken = (id: number, email: string, role: string) => {
   } as jwt.SignOptions);
 };
 
-const sendVerificationEmail = async (email: string, rawToken: string) => {
-  const link = `${frontendUrl()}/verify-email/${rawToken}`;
+const siteUrl = (req: Request) => {
+  const origin = String(req.headers.origin || '').replace(/\/$/, '');
+  if (process.env.NODE_ENV !== 'production' && /^https?:\/\/localhost:\d+$/.test(origin)) {
+    return origin;
+  }
+  return frontendUrl();
+};
+
+const sendVerificationEmail = async (email: string, rawToken: string, site: string) => {
+  const link = `${site}/verify-email/${rawToken}`;
   await sendEmail(
     email,
     'Verify your nanoapps account',
@@ -60,16 +68,35 @@ export const registerUser = async (req: Request, res: Response) => {
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await savePendingRegistration(name.trim(), address, hashedPassword, hashToken(rawToken), expiresAt);
 
+    const site = siteUrl(req);
+    const verificationLink = `${site}/verify-email/${rawToken}`;
+
     try {
-      await sendVerificationEmail(address, rawToken);
+      await sendVerificationEmail(address, rawToken, site);
     } catch (error) {
+      if (!(error instanceof MailError)) {
+        await deletePendingRegistration(address);
+        throw error;
+      }
+
+      // Keep the signup in local development so login/download can still be tested.
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`Dev verification link for ${address}: ${verificationLink}`);
+        console.error('Verification mail failed in development:', error.message);
+        return res.status(200).json({
+          message:
+            'Signup saved. Email could not be sent from this machine, so use the verification link below, then log in.',
+          verificationLink,
+        });
+      }
+
       await deletePendingRegistration(address);
-      if (!(error instanceof MailError)) throw error;
       return res.status(error.status).json({ message: error.message });
     }
 
     res.status(200).json({
       message: 'Check your email for a verification link, then log in. The account is created when you open that link.',
+      ...(process.env.NODE_ENV !== 'production' ? { verificationLink } : {}),
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -159,7 +186,7 @@ export const resendVerification = async (req: Request, res: Response) => {
     } else {
       await setVerificationToken(user.id, hashToken(rawToken));
     }
-    await sendVerificationEmail(email, rawToken);
+    await sendVerificationEmail(email, rawToken, siteUrl(req));
     res.json(generic);
   } catch (error: any) {
     const status = error instanceof MailError ? error.status : 500;
