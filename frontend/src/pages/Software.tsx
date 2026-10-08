@@ -4,8 +4,8 @@ export default function Software() {
   return (
     <CatalogPage
       type="desktop"
-      title="Install on your computer"
-      intro="Desktop software for real work. Download once, use offline. Free or paid installers for Windows and Mac."
+      title="Desktop software"
+      intro="One-time purchase or subscription. Install once, and get updates from your dashboard."
     />
   )
 }

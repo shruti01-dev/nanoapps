@@ -10,23 +10,17 @@ export default function Register() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [verificationLink, setVerificationLink] = useState('')
-  const [resendNote, setResendNote] = useState('')
+  const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const { register } = useAuth()
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
-    setSuccess('')
-    setVerificationLink('')
-    setResendNote('')
     setLoading(true)
     try {
-      const data = await register(name, email, password)
-      setSuccess(data.message || 'Check your email for a verification link, then log in.')
-      if (data.verificationLink) setVerificationLink(data.verificationLink)
+      await register(name, email, password)
+      setSuccess(true)
     } catch (err: any) {
       setError(err.response?.data?.message || 'Something went wrong. Try again.')
     } finally {
@@ -34,50 +28,30 @@ export default function Register() {
     }
   }
 
-  const handleResend = async () => {
-    setResendNote('')
-    try {
-      const { data } = await resendVerificationRequest(email)
-      setResendNote(data.message || 'If that email is unverified, a new link has been sent.')
-    } catch (err: any) {
-      setResendNote(err.response?.data?.message || 'Could not resend the verification email.')
-    }
-  }
-
   return (
     <div className="flex min-h-screen flex-col bg-paper">
       <Navbar />
       <main className="flex flex-1 items-center justify-center px-6 py-16">
-        <div className="bracket-card w-full max-w-md bg-paper p-8">
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-teal">Account</p>
-          <h1 className="mt-2 font-display text-2xl font-semibold text-ink">Create your account</h1>
+        <div className="w-full max-w-sm">
+          <h1 className="font-display text-2xl font-semibold text-ink">Create your account</h1>
           <p className="mt-2 text-sm text-ink/60">
-            Register to download software, manage licenses, and unlock paid tools.
+            Register to buy tools, subscribe, and manage downloads.
           </p>
 
           {success ? (
             <div className="mt-8">
-              <p className="text-sm text-teal">{success}</p>
-              {verificationLink && (
-                <a
-                  href={verificationLink}
-                  className="mt-4 inline-flex bg-ink px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint"
-                >
-                  Open verification link
-                </a>
-              )}
+              <p className="text-sm text-teal">
+                Check your email for a verification link, then log in.
+              </p>
               <button
                 type="button"
-                className="mt-4 block text-sm font-medium text-teal hover:underline"
-                onClick={handleResend}
+                className="mt-4 text-sm font-medium text-teal hover:underline"
+                onClick={() => resendVerificationRequest(email).catch(() => {})}
               >
                 Resend verification email
               </button>
-              {resendNote && <p className="mt-2 text-sm text-ink/60">{resendNote}</p>}
               <p className="mt-6 text-sm text-ink/60">
-                <Link to="/login" className="font-medium text-teal hover:underline">
-                  Go to login
-                </Link>
+                <Link to="/login" className="font-medium text-teal hover:underline">Go to login</Link>
               </p>
             </div>
           ) : (
@@ -90,7 +64,7 @@ export default function Register() {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="mt-1 w-full border border-line bg-paper px-3 py-2.5 text-sm text-ink outline-none focus:border-teal"
+                    className="mt-1 w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-teal"
                   />
                 </div>
                 <div>
@@ -100,7 +74,7 @@ export default function Register() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="mt-1 w-full border border-line bg-paper px-3 py-2.5 text-sm text-ink outline-none focus:border-teal"
+                    className="mt-1 w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-teal"
                   />
                 </div>
                 <div>
@@ -111,9 +85,8 @@ export default function Register() {
                     minLength={6}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="mt-1 w-full border border-line bg-paper px-3 py-2.5 text-sm text-ink outline-none focus:border-teal"
+                    className="mt-1 w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-teal"
                   />
-                  <p className="mt-1 text-xs text-ink/45">At least 6 characters.</p>
                 </div>
 
                 {error && <p className="text-sm text-red-600">{error}</p>}
@@ -123,7 +96,7 @@ export default function Register() {
                   disabled={loading}
                   className="mt-2 bg-ink px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint disabled:opacity-60"
                 >
-                  {loading ? 'Creating account…' : 'Create account'}
+                  {loading ? 'Creating account…' : 'Register'}
                 </button>
               </form>
 
