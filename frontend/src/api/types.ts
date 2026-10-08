@@ -3,6 +3,8 @@ export type CatalogProduct = {
   name: string
   slug: string
   description: string
+  tagline: string
+  features: string[]
   type: 'web' | 'desktop'
   price: number
   pricing_model: 'one_time' | 'subscription'
@@ -11,6 +13,8 @@ export type CatalogProduct = {
   is_active: boolean
   platforms: string[]
   free_download_url?: string | null
+  windows_download_url?: string | null
+  mac_download_url?: string | null
   razorpay_plan_id?: string | null
 }
 
@@ -18,12 +22,16 @@ export type ProductInput = {
   name: string
   slug: string
   description: string
+  tagline?: string
+  features?: string | string[]
   type: string
   price: number
   pricing_model: string
   billing_period: string
   is_free: boolean
-  free_download_url?: string
+  free_download_url?: string | null
+  windows_download_url?: string | null
+  mac_download_url?: string | null
   razorpay_plan_id?: string
   is_active?: boolean
 }

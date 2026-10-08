@@ -8,11 +8,16 @@ type User = {
   role: string
 }
 
+type RegisterResult = {
+  message?: string
+  verificationLink?: string
+}
+
 type AuthContextType = {
   user: User | null
   loading: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (name: string, email: string, password: string) => Promise<void>
+  register: (name: string, email: string, password: string) => Promise<RegisterResult>
   logout: () => void
 }
 
@@ -50,7 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const register = async (name: string, email: string, password: string) => {
-    await registerRequest(name, email, password)
+    const { data } = await registerRequest(name, email, password)
+    return data as RegisterResult
   }
 
   const logout = () => {

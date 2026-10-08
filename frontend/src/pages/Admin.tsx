@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { createProduct, getProducts, updateProduct, uploadProductFile } from '../api/products'
+import { createProduct, deleteProduct, getProducts, updateProduct, uploadProductFile } from '../api/products'
 import { getAdminOrders, getUsers, grantAccess } from '../api/admin'
 import type { AccountUser, CatalogProduct, OrderRecord } from '../api/types'
 import { formatInr, priceLabel } from '../lib/format'
@@ -13,7 +13,9 @@ const slugify = (text: string) =>
 
 const emptyForm = {
   name: '',
+  tagline: '',
   description: '',
+  features: '',
   type: 'web',
   price: '',
   pricingModel: 'one_time',
@@ -34,13 +36,19 @@ export default function Admin() {
   const [success, setSuccess] = useState('')
 
   const [uploadProductId, setUploadProductId] = useState<number | null>(null)
-  const [platform, setPlatform] = useState('windows')
+  const [platform, setPlatform] = useState<'windows' | 'mac'>('windows')
   const [version, setVersion] = useState('')
   const [uploadFiles, setUploadFiles] = useState<File[]>([])
   const [uploadMode, setUploadMode] = useState<'link' | 'file' | 'folder'>('link')
   const [linkUrl, setLinkUrl] = useState('')
   const [grantEmail, setGrantEmail] = useState('')
   const [grantProductId, setGrantProductId] = useState<number | null>(null)
+
+  const platformLinkFor = (product: CatalogProduct | undefined, selected: 'windows' | 'mac') => {
+    if (!product) return ''
+    if (selected === 'windows') return product.windows_download_url || product.free_download_url || ''
+    return product.mac_download_url || product.free_download_url || ''
+  }
 
   const load = async () => {
     const [productRes, userRes, orderRes] = await Promise.all([
@@ -60,7 +68,9 @@ export default function Admin() {
   const payload = () => ({
     name: form.name,
     slug: slugify(form.name),
+    tagline: form.tagline,
     description: form.description,
+    features: form.features,
     type: form.type,
     price: form.pricingModel === 'free' ? 0 : parseFloat(form.price || '0'),
     pricing_model: form.pricingModel === 'subscription' ? 'subscription' : 'one_time',
@@ -91,7 +101,9 @@ export default function Admin() {
     setEditingId(product.id)
     setForm({
       name: product.name,
+      tagline: product.tagline || '',
       description: product.description,
+      features: (product.features || []).join('\n'),
       type: product.type,
       price: String(product.price),
       pricingModel: product.is_free ? 'free' : product.pricing_model,
@@ -113,22 +125,30 @@ export default function Admin() {
       setError('Select a tool or software first.')
       return
     }
+    if (!linkUrl.trim()) {
+      setError('Paste a Windows or Mac download URL first.')
+      return
+    }
     try {
       await updateProduct(selectedUpload.id, {
         name: selectedUpload.name,
         slug: selectedUpload.slug,
+        tagline: selectedUpload.tagline || '',
         description: selectedUpload.description,
+        features: selectedUpload.features || [],
         type: selectedUpload.type,
         price: Number(selectedUpload.price),
         pricing_model: selectedUpload.pricing_model,
         billing_period: selectedUpload.billing_period || 'monthly',
         is_free: selectedUpload.is_free,
-        free_download_url: linkUrl,
+        free_download_url: selectedUpload.free_download_url || null,
+        windows_download_url:
+          platform === 'windows' ? linkUrl.trim() : selectedUpload.windows_download_url || null,
+        mac_download_url: platform === 'mac' ? linkUrl.trim() : selectedUpload.mac_download_url || null,
         razorpay_plan_id: selectedUpload.razorpay_plan_id || '',
         is_active: selectedUpload.is_active,
       })
-      setSuccess('Link saved.')
-      setLinkUrl('')
+      setSuccess(`${platform === 'windows' ? 'Windows' : 'Mac'} download link saved.`)
       await load()
     } catch (err: any) {
       setError(err.response?.data?.message || 'Could not save the link.')
@@ -160,6 +180,29 @@ export default function Admin() {
     }
   }
 
+  const handleDeleteProduct = async (product: CatalogProduct) => {
+    const confirmed = window.confirm(`Delete "${product.name}"? This removes it from Tools and Software.`)
+    if (!confirmed) return
+    setError('')
+    setSuccess('')
+    try {
+      await deleteProduct(product.id)
+      if (editingId === product.id) {
+        setEditingId(null)
+        setForm(emptyForm)
+      }
+      if (uploadProductId === product.id) {
+        setUploadProductId(null)
+        setLinkUrl('')
+      }
+      if (grantProductId === product.id) setGrantProductId(null)
+      setSuccess(`${product.name} deleted.`)
+      await load()
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Could not delete the product.')
+    }
+  }
+
   const handleGrant = async (event: FormEvent) => {
     event.preventDefault()
     setError('')
@@ -186,8 +229,7 @@ export default function Admin() {
           <div className="mx-auto max-w-6xl">
             <h1 className="font-display text-2xl font-semibold text-ink">Admin</h1>
             <p className="mt-2 max-w-2xl text-sm text-ink/60">
-              Add products, upload desktop files, and grant access. Built-in web tools use the slugs
-              image-compressor and data-cleaner. Subscription products need a Razorpay plan id.
+              Add products, then attach a Windows or Mac download link for software. Subscription products need a Razorpay plan id.
             </p>
           </div>
         </section>
@@ -200,7 +242,26 @@ export default function Admin() {
               </h2>
               <form onSubmit={handleSaveProduct} className="mt-5 flex flex-col gap-3">
                 <input className={field} placeholder="Product name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                <textarea className={field} placeholder="Description" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                <input
+                  className={field}
+                  placeholder="Short tagline (e.g. Merge, convert & compress)"
+                  value={form.tagline}
+                  onChange={(e) => setForm({ ...form, tagline: e.target.value })}
+                />
+                <textarea
+                  className={field}
+                  placeholder="Longer description shown on the product page"
+                  rows={3}
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                />
+                <textarea
+                  className={field}
+                  placeholder={'Features, one per line\nMerge multiple PDFs\nConvert to Word or Excel\nCompress and split files'}
+                  rows={5}
+                  value={form.features}
+                  onChange={(e) => setForm({ ...form, features: e.target.value })}
+                />
                 <div className="grid grid-cols-2 gap-3">
                   <select className={field} value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
                     <option value="web">Tools</option>
@@ -234,14 +295,26 @@ export default function Admin() {
                     Listed on the site
                   </label>
                 )}
-                <div className="mt-2 flex gap-3">
+                <div className="mt-2 flex flex-wrap items-center gap-3">
                   <button type="submit" className="bg-ink px-4 py-2 text-sm font-medium text-paper transition hover:bg-blueprint">
                     {editingId ? 'Save changes' : 'Create product'}
                   </button>
                   {editingId && (
-                    <button type="button" className="text-sm text-ink/60" onClick={() => { setEditingId(null); setForm(emptyForm) }}>
-                      Cancel
-                    </button>
+                    <>
+                      <button type="button" className="text-sm text-ink/60" onClick={() => { setEditingId(null); setForm(emptyForm) }}>
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="border border-red-600 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-600 hover:text-paper"
+                        onClick={() => {
+                          const product = products.find((item) => item.id === editingId)
+                          if (product) handleDeleteProduct(product)
+                        }}
+                      >
+                        Delete product
+                      </button>
+                    </>
                   )}
                 </div>
               </form>
@@ -250,12 +323,15 @@ export default function Admin() {
             <div className="flex flex-col gap-10">
               <div className="bracket-card bg-paper p-6">
                 <h2 className="font-display text-lg font-semibold text-ink">Upload or add a link</h2>
+                <p className="mt-2 text-sm text-ink/60">
+                  Save a separate Windows and Mac release. Pick the platform first, then add a GitHub URL or upload the build for that platform.
+                </p>
                 <form onSubmit={handleSaveLink} className="mt-5 flex flex-col gap-3">
                   <select className={field} value={uploadProductId ?? ''} onChange={(e) => {
                     const id = Number(e.target.value)
                     setUploadProductId(id)
                     const product = products.find((item) => item.id === id)
-                    setLinkUrl(product?.free_download_url || '')
+                    setLinkUrl(platformLinkFor(product, platform))
                     setUploadFiles([])
                   }}>
                     <option value="">Select tool or software</option>
@@ -265,7 +341,16 @@ export default function Admin() {
                       </option>
                     ))}
                   </select>
-                  <select className={field} value={platform} onChange={(e) => setPlatform(e.target.value)}>
+                  <select
+                    className={field}
+                    value={platform}
+                    onChange={(e) => {
+                      const next = e.target.value as 'windows' | 'mac'
+                      setPlatform(next)
+                      setLinkUrl(platformLinkFor(selectedUpload, next))
+                      setUploadFiles([])
+                    }}
+                  >
                     <option value="windows">Windows</option>
                     <option value="mac">Mac</option>
                   </select>
@@ -281,12 +366,19 @@ export default function Admin() {
                     <>
                       <input
                         className={field}
-                        placeholder="URL — opens this tool or software"
+                        placeholder={`${platform === 'windows' ? 'Windows' : 'Mac'} download URL (GitHub release, zip, installer)`}
                         value={linkUrl}
                         onChange={(e) => setLinkUrl(e.target.value)}
                       />
+                      {selectedUpload && (
+                        <p className="text-xs text-ink/50">
+                          Saved — Windows: {selectedUpload.windows_download_url || selectedUpload.free_download_url || 'not added yet'}
+                          {' · '}
+                          Mac: {selectedUpload.mac_download_url || 'not added yet'}
+                        </p>
+                      )}
                       <button type="submit" className="border border-ink px-4 py-2 text-sm font-medium text-ink transition hover:border-teal hover:text-teal">
-                        Save URL
+                        Save {platform === 'windows' ? 'Windows' : 'Mac'} URL
                       </button>
                     </>
                   ) : (
@@ -345,7 +437,7 @@ export default function Admin() {
                     <th className="px-4 py-3 font-medium">Type</th>
                     <th className="px-4 py-3 font-medium">Price</th>
                     <th className="px-4 py-3 font-medium">Status</th>
-                    <th className="px-4 py-3 font-medium"></th>
+                    <th className="px-4 py-3 font-medium text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -356,7 +448,22 @@ export default function Admin() {
                       <td className="px-4 py-3 text-ink/70">{priceLabel(product)}</td>
                       <td className="px-4 py-3 text-ink/50">{product.is_active ? 'Listed' : 'Hidden'}</td>
                       <td className="px-4 py-3 text-right">
-                        <button type="button" className="text-teal" onClick={() => startEdit(product)}>Edit</button>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            className="border border-line px-3 py-1.5 text-teal transition hover:border-teal"
+                            onClick={() => startEdit(product)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="border border-red-600 px-3 py-1.5 text-red-600 transition hover:bg-red-600 hover:text-paper"
+                            onClick={() => handleDeleteProduct(product)}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

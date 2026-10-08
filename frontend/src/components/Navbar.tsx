@@ -22,8 +22,14 @@ export default function Navbar() {
   return (
     <header className="border-b border-line bg-paper">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link to="/" className="font-display text-lg font-semibold tracking-tight text-ink">
-          nanoapps
+        <Link to="/" className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight text-ink">
+          <span className="grid h-8 w-8 grid-cols-2 gap-0.5 rounded-lg bg-[#2563eb] p-1" aria-hidden="true">
+            <i className="rounded-[2px] bg-white" />
+            <i className="rounded-[2px] bg-white/60" />
+            <i className="rounded-[2px] bg-white/60" />
+            <i className="rounded-[2px] bg-white" />
+          </span>
+          nanoapps<span className="text-[#2563eb]">.</span>
         </Link>
         <nav className="hidden items-center gap-8 text-sm text-ink/80 md:flex">
           {links.map((link) => (
