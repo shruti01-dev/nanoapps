@@ -5,10 +5,13 @@ import ProductCard from '../components/ProductCard'
 import { getProducts } from '../api/products'
 import type { CatalogProduct } from '../api/types'
 
+type PriceFilter = 'all' | 'free' | 'one_time' | 'subscription'
+
 export default function Pricing() {
   const [products, setProducts] = useState<CatalogProduct[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<PriceFilter>('all')
 
   useEffect(() => {
     getProducts()
@@ -16,6 +19,17 @@ export default function Pricing() {
       .catch(() => setError('Could not load prices.'))
       .finally(() => setLoading(false))
   }, [])
+
+  const visible = products.filter((product) => {
+    if (filter === 'free') return product.is_free
+    if (filter === 'one_time') return !product.is_free && product.pricing_model === 'one_time'
+    if (filter === 'subscription') return product.pricing_model === 'subscription'
+    return true
+  })
+
+  const choose = (next: Exclude<PriceFilter, 'all'>) => {
+    setFilter((current) => (current === next ? 'all' : next))
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-paper">
@@ -32,21 +46,21 @@ export default function Pricing() {
 
         <section className="px-6 py-12">
           <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 md:grid-cols-3">
-            <div className="bracket-card bg-paper p-8">
+            <button type="button" aria-pressed={filter === 'free'} onClick={() => choose('free')} className={`bracket-card bg-paper p-8 text-left ${filter === 'free' ? 'border-teal' : ''}`}>
               <span className="text-xs font-medium text-teal">Free</span>
               <h2 className="mt-2 font-display text-xl font-semibold text-ink">No charge</h2>
               <p className="mt-3 text-sm leading-relaxed text-ink/70">Use the tool or software with no payment.</p>
-            </div>
-            <div className="bracket-card bg-paper p-8">
+            </button>
+            <button type="button" aria-pressed={filter === 'one_time'} onClick={() => choose('one_time')} className={`bracket-card bg-paper p-8 text-left ${filter === 'one_time' ? 'border-teal' : ''}`}>
               <span className="text-xs font-medium text-teal">One-time</span>
               <h2 className="mt-2 font-display text-xl font-semibold text-ink">Pay once</h2>
               <p className="mt-3 text-sm leading-relaxed text-ink/70">Pay once and keep using the tool or software.</p>
-            </div>
-            <div className="bracket-card bg-blueprint p-8 text-paper">
+            </button>
+            <button type="button" aria-pressed={filter === 'subscription'} onClick={() => choose('subscription')} className={`bracket-card p-8 text-left ${filter === 'subscription' ? 'border-teal bg-blueprint text-paper' : 'bg-blueprint text-paper'}`}>
               <span className="text-xs font-medium text-amber">Subscription</span>
               <h2 className="mt-2 font-display text-xl font-semibold">Monthly or yearly</h2>
               <p className="mt-3 text-sm leading-relaxed text-paper/70">A repeating payment. Cancel anytime from your dashboard.</p>
-            </div>
+            </button>
           </div>
         </section>
 
@@ -55,11 +69,13 @@ export default function Pricing() {
             <h2 className="font-display text-2xl font-semibold text-ink">Product prices</h2>
             {loading && <p className="mt-6 text-sm text-ink/60">Loading…</p>}
             {error && <p className="mt-6 text-sm text-red-600">{error}</p>}
-            {!loading && !error && products.length === 0 && (
-              <p className="mt-6 text-sm text-ink/60">Nothing is listed here yet.</p>
+            {!loading && !error && visible.length === 0 && (
+              <p className="mt-6 text-sm text-ink/60">
+                {filter === 'all' ? 'Nothing is listed here yet.' : 'Nothing in this group is listed yet.'}
+              </p>
             )}
             <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {products.map((product) => (
+              {visible.map((product) => (
                 <ProductCard key={product.id} {...product} />
               ))}
             </div>

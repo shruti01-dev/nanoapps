@@ -8,10 +8,12 @@ import { priceLabel } from '../lib/format'
 import type { CatalogProduct } from '../api/types'
 import ImageCompressor from '../tools/ImageCompressor'
 import DataCleaner from '../tools/DataCleaner'
+import { builtinBySlug } from '../tools/builtinTools'
 
 const tools: Record<string, () => ReactNode> = {
   'image-compressor': () => <ImageCompressor />,
   'data-cleaner': () => <DataCleaner />,
+  ...Object.fromEntries(Object.entries(builtinBySlug).map(([slug, tool]) => [slug, tool.render])),
 }
 
 export default function ProductDetail() {
@@ -37,7 +39,13 @@ export default function ProductDetail() {
         setError('')
       })
       .catch(() => {
-        if (active) setError('Product not found.')
+        if (!active) return
+        if (slug && builtinBySlug[slug]) {
+          setProduct(null)
+          setError('')
+          return
+        }
+        setError('Product not found.')
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -72,6 +80,7 @@ export default function ProductDetail() {
     }
   }
 
+  const builtin = slug ? builtinBySlug[slug] : undefined
   const Tool = product ? tools[product.slug] : undefined
 
   return (
@@ -81,6 +90,13 @@ export default function ProductDetail() {
         <div className="mx-auto max-w-3xl">
           {loading && <p className="text-sm text-ink/60">Loading…</p>}
           {!loading && error && !product && <p className="text-sm text-red-600">{error}</p>}
+          {!loading && !product && builtin && (
+            <>
+              <h1 className="font-display text-3xl font-semibold text-ink">{builtin.name}</h1>
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink/70">{builtin.summary}</p>
+              <div className="mt-8">{builtin.render()}</div>
+            </>
+          )}
           {product && (
             <>
               <p className="text-xs font-medium text-teal">{priceLabel(product)}</p>
@@ -103,7 +119,7 @@ export default function ProductDetail() {
                     Pay now
                   </button>
                 )}
-                {!hasAccess && product.is_free && (
+                {!hasAccess && product.is_free && !builtinBySlug[product.slug] && (
                   <button
                     type="button"
                     onClick={buy}
@@ -139,7 +155,7 @@ export default function ProductDetail() {
                       {product.platforms.length === 0 ? 'Download' : `Download for ${platform === 'windows' ? 'Windows' : 'Mac'}`}
                     </button>
                   ))}
-                {!user && (
+                {!user && !builtinBySlug[product.slug] && (
                   <Link to={`/login?next=${encodeURIComponent(window.location.pathname)}`} className="self-center text-sm text-teal">
                     Log in
                   </Link>
@@ -151,7 +167,7 @@ export default function ProductDetail() {
 
               {error && product && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
-              {hasAccess && product.type === 'web' && (
+              {(hasAccess || Boolean(builtinBySlug[product.slug])) && product.type === 'web' && (
                 <div className="mt-10">
                   {Tool ? <Tool /> : <p className="text-sm text-ink/60">This web tool is not available in the app yet.</p>}
                 </div>

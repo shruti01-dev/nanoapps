@@ -158,6 +158,8 @@ function PurchaseCard({
         ) : (
           <Link
             to={toolUrl}
+            target="_blank"
+            rel="noopener noreferrer"
             className="border border-ink px-3 py-2 text-xs font-medium text-ink transition hover:border-teal hover:text-teal"
           >
             Launch tool

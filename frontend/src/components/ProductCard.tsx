@@ -6,7 +6,7 @@ export default function ProductCard(product: CatalogProduct) {
   const kind = product.type === 'desktop' ? 'Desktop app' : 'Web tool'
 
   return (
-    <Link to={productPath(product)} className="bracket-card flex flex-col gap-3 bg-paper p-6 transition hover:border-teal">
+    <Link to={productPath(product)} target="_blank" rel="noopener noreferrer" className="bracket-card flex flex-col gap-3 bg-paper p-6 transition hover:border-teal">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-teal">{priceLabel(product)}</span>
         <span className="text-xs text-ink/50">{kind}</span>

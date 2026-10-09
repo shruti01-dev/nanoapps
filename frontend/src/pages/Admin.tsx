@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { createProduct, getProducts, updateProduct, uploadProductFile } from '../api/products'
+import { createProduct, deleteProduct, getProducts, updateProduct, uploadProductFile } from '../api/products'
 import { getAdminOrders, getUsers, grantAccess } from '../api/admin'
 import type { AccountUser, CatalogProduct, OrderRecord } from '../api/types'
 import { formatInr, priceLabel } from '../lib/format'
@@ -84,6 +84,25 @@ export default function Admin() {
       await load()
     } catch (err: any) {
       setError(err.response?.data?.message || 'Could not save product.')
+    }
+  }
+
+  const handleDelete = async (product: CatalogProduct) => {
+    if (!window.confirm(`Delete ${product.name}? This cannot be undone.`)) return
+    setError('')
+    setSuccess('')
+    try {
+      await deleteProduct(product.id)
+      if (editingId === product.id) {
+        setEditingId(null)
+        setForm(emptyForm)
+      }
+      if (uploadProductId === product.id) setUploadProductId(null)
+      if (grantProductId === product.id) setGrantProductId(null)
+      setSuccess(`${product.name} deleted.`)
+      await load()
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Could not delete product.')
     }
   }
 
@@ -357,6 +376,7 @@ export default function Admin() {
                       <td className="px-4 py-3 text-ink/50">{product.is_active ? 'Listed' : 'Hidden'}</td>
                       <td className="px-4 py-3 text-right">
                         <button type="button" className="text-teal" onClick={() => startEdit(product)}>Edit</button>
+                        <button type="button" className="ml-4 text-sm text-ink/60" onClick={() => handleDelete(product)}>Delete</button>
                       </td>
                     </tr>
                   ))}

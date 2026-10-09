@@ -183,7 +183,37 @@ export const getProductBySlug = async (slug: string) => {
   return result.rows[0];
 };
 
+const builtinTools = [
+  {
+    name: 'Focus Timer',
+    slug: 'focus-timer',
+    description: 'One task. One timer. A little more focus.',
+  },
+  {
+    name: 'Bill Splitter',
+    slug: 'bill-splitter',
+    description: 'Split a meal, a trip, or a shared bill fairly.',
+  },
+  {
+    name: 'Breathing Break',
+    slug: 'breathing-break',
+    description: 'Take a moment. Follow a calmer rhythm.',
+  },
+  {
+    name: 'Unit Converter',
+    slug: 'unit-converter',
+    description: 'From metres to miles, without the mental maths.',
+  },
+];
+
 export const ensureBuiltinTools = async () => {
-  // Built-in browser demos are no longer auto-created.
-  // Desktop software such as SSA PDF Studio is managed from Admin.
+  for (const tool of builtinTools) {
+    await pool.query(
+      `INSERT INTO products
+        (name, slug, description, tagline, features, type, price, pricing_model, is_free, billing_period, is_active)
+       VALUES ($1, $2, $3, '', '', 'web', 0, 'one_time', TRUE, 'monthly', TRUE)
+       ON CONFLICT (slug) DO NOTHING`,
+      [tool.name, tool.slug, tool.description]
+    );
+  }
 };

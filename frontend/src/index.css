@@ -4,13 +4,13 @@
   --font-display: "Space Grotesk", sans-serif;
   --font-body: "Inter", sans-serif;
 
-  --color-paper: #F5F3EE;
-  --color-ink: #1C2024;
-  --color-blueprint: #14213D;
-  --color-blueprint-light: #1D3159;
-  --color-amber: #F2A93B;
-  --color-teal: #3C6E71;
-  --color-line: #D8D3C7;
+  --color-paper: #ffffff;
+  --color-ink: #18283b;
+  --color-blueprint: #18283b;
+  --color-blueprint-light: #2563eb;
+  --color-amber: #e89821;
+  --color-teal: #36a27b;
+  --color-line: #e3e8ef;
 }
 
 body {

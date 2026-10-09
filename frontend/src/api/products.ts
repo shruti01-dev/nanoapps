@@ -18,6 +18,8 @@ export const createProduct = (data: ProductInput) => api.post('/products', data)
 export const updateProduct = (productId: number, data: ProductInput) =>
   api.patch(`/products/${productId}`, data)
 
+export const deleteProduct = (productId: number) => api.delete(`/products/${productId}`)
+
 export const uploadProductFile = (productId: number, formData: FormData) =>
   api.post(`/products/${productId}/files`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
