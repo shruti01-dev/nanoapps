@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { forgotPasswordRequest } from '../api/auth'
+import { sendFirebasePasswordReset } from '../lib/firebase'
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
@@ -16,10 +16,10 @@ export default function ForgotPassword() {
     setError('')
     setLoading(true)
     try {
-      const { data } = await forgotPasswordRequest(email)
-      setMessage(data.message)
+      await sendFirebasePasswordReset(email)
+      setMessage('If that email is registered, a reset link has been sent.')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Could not send the reset email.')
+      setError(err.message || 'Could not send the reset email.')
     } finally {
       setLoading(false)
     }

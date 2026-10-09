@@ -5,6 +5,7 @@ import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import VerifyEmail from './pages/VerifyEmail'
+import AuthConfirm from './pages/AuthConfirm'
 import Tools from './pages/Tools'
 import Software from './pages/Software'
 import ProductDetail from './pages/ProductDetail'
@@ -26,8 +27,10 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
       <Route path="/verify-email/:token" element={<VerifyEmail />} />
+      <Route path="/auth/confirm" element={<AuthConfirm />} />
       <Route path="/tools" element={<Tools />} />
       <Route path="/tools/:slug" element={<ProductDetail />} />
       <Route path="/software" element={<Software />} />

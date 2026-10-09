@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { resendVerificationRequest } from '../api/auth'
+import { resendFirebaseVerification } from '../lib/firebase'
 
 export default function Register() {
   const [name, setName] = useState('')
@@ -11,6 +11,7 @@ export default function Register() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [notice, setNotice] = useState('')
   const [loading, setLoading] = useState(false)
   const { register } = useAuth()
 
@@ -22,7 +23,7 @@ export default function Register() {
       await register(name, email, password)
       setSuccess(true)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Something went wrong. Try again.')
+      setError(err.response?.data?.message || err.message || 'Something went wrong. Try again.')
     } finally {
       setLoading(false)
     }
@@ -41,15 +42,20 @@ export default function Register() {
           {success ? (
             <div className="mt-8">
               <p className="text-sm text-teal">
-                Check your email for a verification link, then log in.
+                Check your email for a verification link from Firebase, then log in.
               </p>
               <button
                 type="button"
-                className="mt-4 text-sm font-medium text-teal hover:underline"
-                onClick={() => resendVerificationRequest(email).catch(() => {})}
+                className="mt-4 block text-sm font-medium text-teal hover:underline"
+                onClick={() =>
+                  resendFirebaseVerification(email, password)
+                    .then(() => setNotice('Verification email sent.'))
+                    .catch((err) => setNotice(err.message || 'Could not send the verification email.'))
+                }
               >
                 Resend verification email
               </button>
+              {notice && <p className="mt-3 text-sm text-ink/70">{notice}</p>}
               <p className="mt-6 text-sm text-ink/60">
                 <Link to="/login" className="font-medium text-teal hover:underline">Go to login</Link>
               </p>

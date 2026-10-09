@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
-import { loginRequest, meRequest, registerRequest } from '../api/auth'
+import { createContext, useCallback, useContext, useState, useEffect, type ReactNode } from 'react'
+import { firebaseLoginRequest, loginRequest, meRequest } from '../api/auth'
+import { isFirebaseCredentialError, loginWithFirebase, registerWithFirebase } from '../lib/firebase'
 
 type User = {
   id: number
@@ -13,6 +14,7 @@ type AuthContextType = {
   loading: boolean
   login: (email: string, password: string) => Promise<void>
   register: (name: string, email: string, password: string) => Promise<void>
+  acceptSession: (token: string, user: User) => void
   logout: () => void
 }
 
@@ -42,16 +44,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false))
   }, [])
 
+  const saveSession = (token: string, nextUser: User) => {
+    localStorage.setItem('token', token)
+    localStorage.setItem('user', JSON.stringify(nextUser))
+    setUser(nextUser)
+  }
+
   const login = async (email: string, password: string) => {
+    try {
+      const firebaseUser = await loginWithFirebase(email, password)
+      const { data } = await firebaseLoginRequest(firebaseUser.idToken, firebaseUser.name)
+      saveSession(data.token, data.user)
+      return
+    } catch (error) {
+      if (!isFirebaseCredentialError(error)) throw error
+    }
+
     const { data } = await loginRequest(email, password)
-    localStorage.setItem('token', data.token)
-    localStorage.setItem('user', JSON.stringify(data.user))
-    setUser(data.user)
+    saveSession(data.token, data.user)
   }
 
   const register = async (name: string, email: string, password: string) => {
-    await registerRequest(name, email, password)
+    await registerWithFirebase(name, email, password)
   }
+
+  const acceptSession = useCallback((token: string, nextUser: User) => {
+    localStorage.setItem('token', token)
+    localStorage.setItem('user', JSON.stringify(nextUser))
+    setUser(nextUser)
+  }, [])
 
   const logout = () => {
     localStorage.removeItem('token')
@@ -60,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, acceptSession, logout }}>
       {children}
     </AuthContext.Provider>
   )
