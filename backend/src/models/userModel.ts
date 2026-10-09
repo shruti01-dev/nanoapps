@@ -156,3 +156,48 @@ export const updatePasswordAndClearToken = async (userId: number, hashedPassword
     [hashedPassword, userId]
   );
 };
+
+export const findAuthUserByEmail = async (email: string) => {
+  const result = await pool.query(
+    `SELECT id, email, email_confirmed_at FROM auth.users WHERE LOWER(email) = LOWER($1)`,
+    [email]
+  );
+  return result.rows[0] as { id: string; email: string; email_confirmed_at: string | null } | undefined;
+};
+
+export const ensureVerifiedAccount = async (
+  name: string,
+  email: string,
+  hashedPassword: string | null
+) => {
+  const existing = await findUserByEmail(email);
+  const safeName = (name || existing?.name || email.split('@')[0]).slice(0, 100);
+  if (existing) {
+    const result = await pool.query(
+      `UPDATE users
+       SET is_verified = TRUE,
+           verification_token = NULL,
+           name = $1,
+           password = COALESCE($2, password)
+       WHERE id = $3
+       RETURNING id, name, email, role`,
+      [safeName, hashedPassword, existing.id]
+    );
+    return result.rows[0];
+  }
+
+  if (!hashedPassword) throw new Error('Password is required');
+  try {
+    return await createVerifiedUser(safeName, email, hashedPassword);
+  } catch (error: any) {
+    if (error?.code !== '23505') throw error;
+    const result = await pool.query(
+      `UPDATE users
+       SET is_verified = TRUE, verification_token = NULL, name = $1, password = $2
+       WHERE LOWER(email) = LOWER($3)
+       RETURNING id, name, email, role`,
+      [safeName, hashedPassword, email]
+    );
+    return result.rows[0];
+  }
+};

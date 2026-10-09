@@ -1,23 +1,46 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { resetPasswordRequest } from '../api/auth'
+import { resetPasswordRequest, supabasePasswordRequest } from '../api/auth'
 
 export default function ResetPassword() {
   const { token } = useParams()
   const navigate = useNavigate()
   const [password, setPassword] = useState('')
+  const [accessToken] = useState(() => {
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    const fromHash = params.get('access_token') || ''
+    const saved = fromHash || sessionStorage.getItem('nanoapps-recovery-token') || ''
+    if (saved) sessionStorage.setItem('nanoapps-recovery-token', saved)
+    return saved
+  })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    const linkError = params.get('error_description')
+    if (linkError) setError(decodeURIComponent(linkError.replace(/\+/g, ' ')))
+    if (params.get('access_token') || linkError) {
+      window.history.replaceState(null, '', window.location.pathname)
+    }
+  }, [])
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+    if (!accessToken && !token) {
+      setError('This reset link is invalid or expired.')
+      return
+    }
     setLoading(true)
     try {
-      await resetPasswordRequest(token as string, password)
+      if (accessToken) {
+        await supabasePasswordRequest(accessToken, password)
+        sessionStorage.removeItem('nanoapps-recovery-token')
+      } else await resetPasswordRequest(token as string, password)
       setSuccess(true)
       setTimeout(() => navigate('/login'), 1500)
     } catch (err: any) {

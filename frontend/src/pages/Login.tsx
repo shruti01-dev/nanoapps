@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import { resendFirebaseVerification } from '../lib/firebase'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -22,7 +23,7 @@ export default function Login() {
       const next = params.get('next')
       navigate(next && next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Something went wrong. Try again.')
+      setError(err.response?.data?.message || err.message || 'Something went wrong. Try again.')
     } finally {
       setLoading(false)
     }
@@ -61,6 +62,19 @@ export default function Login() {
             </div>
 
             {error && <p className="text-sm text-red-600">{error}</p>}
+            {error.toLowerCase().includes('verify') && (
+              <button
+                type="button"
+                className="text-sm font-medium text-teal hover:underline"
+                onClick={() =>
+                  resendFirebaseVerification(email, password)
+                    .then(() => setError('Verification email sent. Open it, then log in.'))
+                    .catch((err) => setError(err.message || 'Could not send the verification email.'))
+                }
+              >
+                Resend verification email
+              </button>
+            )}
 
             <button
               type="submit"
