@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { resendFirebaseVerification } from '../lib/firebase'
+import PasswordField from '../components/PasswordField'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -52,13 +53,7 @@ export default function Login() {
             </div>
             <div>
               <label className="block text-sm font-medium text-ink/80">Password</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-teal"
-              />
+              <PasswordField required value={password} onChange={setPassword} className="mt-1" />
             </div>
 
             {error && <p className="text-sm text-red-600">{error}</p>}

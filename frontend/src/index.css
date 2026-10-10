@@ -78,3 +78,72 @@ body {
   border-bottom: 2px solid var(--bracket);
   border-right: 2px solid var(--bracket);
 }
+
+.logo-mark {
+  overflow: visible;
+}
+.logo-orbit {
+  transform-box: view-box;
+  transform-origin: center;
+}
+.logo-plate {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.logo-mark.is-animated .logo-orbit {
+  animation: logo-orbit 2.4s linear 1 both;
+}
+.logo-mark.is-animated .logo-plate {
+  animation: logo-settle 2.4s ease-in-out 1 both;
+}
+.logo-plate-1 { --cx: 62.5%; --cy: 28%; }
+.logo-plate-2 { --cx: -28%; --cy: 62.5%; }
+.logo-plate-3 { --cx: 62.5%; --cy: -27.5%; }
+.logo-plate-4 { --cx: -97%; --cy: -62.5%; }
+
+@keyframes logo-orbit {
+  0% { transform: rotate(0deg); }
+  62% { transform: rotate(360deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes logo-settle {
+  0%, 52% { transform: translate(var(--cx), var(--cy)) scale(0.4); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+.peg-tile {
+  animation-duration: 1.6s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: both;
+}
+.peg-tile-1 { animation-name: peg-a; }
+.peg-tile-2 { animation-name: peg-b; animation-delay: 0.12s; }
+.peg-tile-3 { animation-name: peg-c; animation-delay: 0.24s; }
+.peg-tile-4 { animation-name: peg-d; animation-delay: 0.36s; }
+
+@keyframes peg-a {
+  0% { transform: translate(34%, 42%) scale(0.4) rotate(-20deg); }
+  42% { transform: translate(10%, 16%) scale(0.72) rotate(8deg); }
+  100% { transform: none; }
+}
+@keyframes peg-b {
+  0% { transform: translate(-34%, 28%) scale(0.4) rotate(18deg); }
+  42% { transform: translate(-8%, 22%) scale(0.72) rotate(-6deg); }
+  100% { transform: none; }
+}
+@keyframes peg-c {
+  0% { transform: translate(30%, -36%) scale(0.4) rotate(16deg); }
+  42% { transform: translate(12%, -10%) scale(0.72) rotate(-8deg); }
+  100% { transform: none; }
+}
+@keyframes peg-d {
+  0% { transform: translate(-28%, -40%) scale(0.4) rotate(-18deg); }
+  42% { transform: translate(-10%, -14%) scale(0.72) rotate(7deg); }
+  100% { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-orbit,
+  .logo-plate,
+  .peg-tile { animation: none; }
+}

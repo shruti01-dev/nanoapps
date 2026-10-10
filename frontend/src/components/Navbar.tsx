@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Logo from './Logo'
 
 const links = [
   { to: '/tools', label: 'Tools' },
@@ -22,8 +23,8 @@ export default function Navbar() {
   return (
     <header className="border-b border-line bg-paper">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link to="/" className="font-display text-lg font-semibold tracking-tight text-ink">
-          nanoapps
+        <Link to="/" className="text-ink" aria-label="nanoapps">
+          <Logo />
         </Link>
         <nav className="hidden items-center gap-8 text-sm text-ink/80 md:flex">
           {links.map((link) => (

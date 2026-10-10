@@ -35,16 +35,14 @@ export default function Pricing() {
     <div className="flex min-h-screen flex-col bg-paper">
       <Navbar />
       <main className="flex-1">
-        <section className="border-b border-line px-6 py-16">
-          <div className="mx-auto max-w-6xl">
+
+        <section className="px-6 py-12">
+        <div className="mx-auto max-w-6xl">
             <h1 className="font-display text-3xl font-semibold text-ink">Pricing</h1>
             <p className="mt-2 max-w-lg text-sm text-ink/60">
               Pay once, or subscribe monthly or yearly. Free tools have no charge.
             </p>
           </div>
-        </section>
-
-        <section className="px-6 py-12">
           <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 md:grid-cols-3">
             <button type="button" aria-pressed={filter === 'free'} onClick={() => choose('free')} className={`bracket-card bg-tile-green p-8 text-left transition hover:-translate-y-0.5 hover:shadow-md ${filter === 'free' ? 'border-teal' : ''}`}>
               <span className="text-xs font-medium text-teal">Free</span>

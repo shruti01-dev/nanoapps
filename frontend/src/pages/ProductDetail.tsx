@@ -82,6 +82,13 @@ export default function ProductDetail() {
 
   const builtin = slug ? builtinBySlug[slug] : undefined
   const Tool = product ? tools[product.slug] : undefined
+  const downloadPlatforms = !product
+    ? []
+    : product.type === 'desktop'
+      ? (product.platforms.length > 0 ? product.platforms : ['windows', 'mac'])
+      : !product.is_free
+        ? ['windows', 'mac']
+        : []
 
   return (
     <div className="flex min-h-screen flex-col bg-paper">
@@ -109,7 +116,7 @@ export default function ProductDetail() {
                 </p>
               )}
 
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-6 flex flex-wrap items-center gap-3">
                 {!hasAccess && !product.is_free && (
                   <button
                     type="button"
@@ -128,39 +135,26 @@ export default function ProductDetail() {
                     Use this tool
                   </button>
                 )}
-                {!product.is_free &&
-                  (['windows', 'mac'] as const).map((platform) => (
-                    <button
-                      key={platform}
-                      type="button"
-                      disabled={!hasAccess}
-                      onClick={() => download(platform)}
-                      className={
-                        hasAccess
-                          ? 'border border-ink px-4 py-3 text-sm font-medium text-ink transition hover:border-teal hover:text-teal'
-                          : 'cursor-not-allowed border border-line px-4 py-3 text-sm font-medium text-ink/40'
-                      }
-                    >
-                      Download for {platform === 'windows' ? 'Windows' : 'Mac'}
-                    </button>
-                  ))}
-                {hasAccess && product.is_free && product.type === 'desktop' &&
-                  (product.platforms.length > 0 ? product.platforms : ['windows']).map((platform) => (
-                    <button
-                      key={platform}
-                      type="button"
-                      onClick={() => download(platform)}
-                      className="border border-ink px-4 py-3 text-sm font-medium text-ink transition hover:border-teal hover:text-teal"
-                    >
-                      {product.platforms.length === 0 ? 'Download' : `Download for ${platform === 'windows' ? 'Windows' : 'Mac'}`}
-                    </button>
-                  ))}
                 {!user && !builtinBySlug[product.slug] && (
-                  <Link to={`/login?next=${encodeURIComponent(window.location.pathname)}`} className="self-center text-sm text-teal">
+                  <Link to={`/login?next=${encodeURIComponent(window.location.pathname)}`} className="text-sm font-medium text-teal">
                     Log in
                   </Link>
                 )}
               </div>
+
+              {downloadPlatforms.length > 0 && (
+                <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {downloadPlatforms.map((platform) => (
+                    <DownloadCard
+                      key={platform}
+                      platform={platform}
+                      enabled={hasAccess}
+                      lockedNote={product.is_free ? 'Log in to download this installer.' : 'This download unlocks after payment.'}
+                      onDownload={() => download(platform)}
+                    />
+                  ))}
+                </div>
+              )}
               {!product.is_free && !hasAccess && (
                 <p className="mt-3 text-xs text-ink/50">Windows and Mac downloads stay locked until payment is complete.</p>
               )}
@@ -177,6 +171,47 @@ export default function ProductDetail() {
         </div>
       </main>
       <Footer />
+    </div>
+  )
+}
+
+const downloadStyles: Record<string, { name: string; fill: string; note: string }> = {
+  windows: { name: 'Windows', fill: 'bg-tile-blue', note: 'Installer for Windows computers.' },
+  mac: { name: 'Mac', fill: 'bg-tile-orange', note: 'Installer for Mac computers.' },
+}
+
+function DownloadCard({
+  platform,
+  enabled,
+  lockedNote,
+  onDownload,
+}: {
+  platform: string
+  enabled: boolean
+  lockedNote: string
+  onDownload: () => void
+}) {
+  const style = downloadStyles[platform] || downloadStyles.windows
+
+  return (
+    <div className={`bracket-card flex flex-col p-6 ${style.fill}`}>
+      <p className="text-xs font-medium uppercase tracking-wide text-ink/50">{style.name}</p>
+      <h2 className="mt-2 font-display text-xl font-semibold text-ink">Download for {style.name}</h2>
+      <p className="mt-2 flex-1 text-sm leading-relaxed text-ink/70">
+        {enabled ? style.note : lockedNote}
+      </p>
+      <button
+        type="button"
+        disabled={!enabled}
+        onClick={onDownload}
+        className={
+          enabled
+            ? 'mt-6 bg-ink px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint'
+            : 'mt-6 cursor-not-allowed bg-paper/80 px-4 py-3 text-sm font-medium text-ink/40'
+        }
+      >
+        Download for {style.name}
+      </button>
     </div>
   )
 }

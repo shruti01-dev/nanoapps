@@ -29,7 +29,7 @@ export default function Landing() {
       <Navbar />
 
       {/* Hero */}
-      <section className="grid-dots border-b border-line">
+      <section className="grid-dots min-h-[90vh] border-b border-line">
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-6 py-20 md:grid-cols-2">
           <div>
             <h1 className="font-display text-4xl font-semibold leading-tight text-ink md:text-5xl">
@@ -55,7 +55,7 @@ export default function Landing() {
       </section>
 
       {/* Featured products */}
-      <section id="products" className="mx-auto max-w-6xl px-6 py-20">
+      <section id="products" className="mx-auto min-h-[90vh] max-w-6xl px-6 py-20">
         <h2 className="font-display text-2xl font-semibold text-ink">Tools people actually use</h2>
         <p className="mt-2 max-w-lg text-sm text-ink/60">
           A growing catalog of focused utilities. No bloated suites — just the tool you need, ready when you need it.
@@ -74,7 +74,7 @@ export default function Landing() {
       </section>
 
       {/* How it works */}
-      <section id="how-it-works" className="border-y border-line bg-canvas py-20">
+      <section id="how-it-works" className="min-h-[90vh] border-y border-line bg-canvas py-20">
         <div className="mx-auto max-w-6xl px-6">
           <h2 className="font-display text-2xl font-semibold text-ink">How it works</h2>
           <div className="mt-12 grid grid-cols-1 gap-10 md:grid-cols-3">
@@ -92,7 +92,7 @@ export default function Landing() {
       </section>
 
       {/* Pricing teaser */}
-      <section id="pricing" className="mx-auto max-w-6xl px-6 py-20">
+      <section id="pricing" className="mx-auto min-h-[90vh] max-w-6xl px-6 py-20">
         <h2 className="font-display text-2xl font-semibold text-ink">Pay the way that fits the tool</h2>
         <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2">
           <div className="bracket-card bg-tile-blue p-8">

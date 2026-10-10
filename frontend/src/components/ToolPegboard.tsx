@@ -13,15 +13,14 @@ const tiles = [
 export default function ToolPegboard() {
   return (
     <div className="grid-dots relative grid grid-cols-2 gap-5 rounded-sm p-8">
-      {tiles.map((tile) => (
-        <div
-          key={tile.code}
-          className={`bracket-card ${tile.rotate} ${tile.offset} ${tile.fill} flex h-28 items-center gap-3 p-3 shadow-sm`}
-        >
-          <img src={tile.image} alt="" className="h-16 w-16 rounded-sm object-cover" />
-          <div className="flex h-full flex-col justify-between">
-            <span className="font-display text-xs font-semibold text-teal">{tile.code}</span>
-            <span className="text-sm text-ink/70">{tile.label}</span>
+      {tiles.map((tile, index) => (
+        <div key={tile.code} className={`peg-tile peg-tile-${index + 1}`}>
+          <div className={`bracket-card ${tile.rotate} ${tile.offset} ${tile.fill} flex h-28 items-center gap-3 p-3 shadow-sm`}>
+            <img src={tile.image} alt="" className="h-16 w-16 rounded-sm object-cover" />
+            <div className="flex h-full flex-col justify-between">
+              <span className="font-display text-xs font-semibold text-teal">{tile.code}</span>
+              <span className="text-sm text-ink/70">{tile.label}</span>
+            </div>
           </div>
         </div>
       ))}

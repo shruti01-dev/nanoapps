@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { resetPasswordRequest, supabasePasswordRequest } from '../api/auth'
+import PasswordField from '../components/PasswordField'
 
 export default function ResetPassword() {
   const { token } = useParams()
@@ -58,14 +59,12 @@ export default function ResetPassword() {
           <h1 className="font-display text-2xl font-semibold text-ink">Set a new password</h1>
 
           <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
-            <input
-              type="password"
+            <PasswordField
               required
               minLength={6}
               placeholder="New password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-teal"
+              onChange={setPassword}
             />
 
             {error && <p className="text-sm text-red-600">{error}</p>}
