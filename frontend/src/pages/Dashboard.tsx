@@ -66,7 +66,7 @@ export default function Dashboard() {
             <h2 className="font-display text-lg font-semibold text-ink">Your tools</h2>
             {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
             {purchases.length === 0 && (
-              <div className="mt-6 bracket-card bg-paper p-8 text-center">
+              <div className="mt-6 bracket-card bg-tile-blue p-8 text-center">
                 <p className="text-sm text-ink/60">
                   You have not bought anything yet. Browse{' '}
                   <Link to="/tools" className="font-medium text-teal hover:underline">tools</Link>{' '}
@@ -93,7 +93,7 @@ export default function Dashboard() {
             {orders.length === 0 ? (
               <p className="mt-4 text-sm text-ink/60">No payments yet.</p>
             ) : (
-              <div className="mt-4 overflow-x-auto border border-line">
+              <div className="mt-4 overflow-x-auto border border-line bg-canvas">
                 <table className="w-full text-left text-sm">
                   <thead className="border-b border-line text-ink/60">
                     <tr>
@@ -138,9 +138,11 @@ function PurchaseCard({
   const toolUrl = purchase.type === 'desktop' ? `/software/${purchase.slug}` : `/tools/${purchase.slug}`
   const when = purchase.created_at ? new Date(purchase.created_at).toLocaleDateString() : null
   const canCancel = purchase.subscription_id && !purchase.cancel_at_period_end
+  const fills = ['bg-tile-orange', 'bg-tile-green', 'bg-tile-pink', 'bg-tile-blue']
+  const fill = fills[Math.abs(purchase.id) % fills.length]
 
   return (
-    <div className="bracket-card bg-paper p-6">
+    <div className={`bracket-card p-6 ${fill}`}>
       <h3 className="font-display text-base font-semibold text-ink">{purchase.name}</h3>
       {when && <p className="mt-1 text-xs text-ink/50">Purchased {when}</p>}
       {purchase.license_key && (

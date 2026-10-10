@@ -54,7 +54,7 @@ export default function ResetPassword() {
     <div className="flex min-h-screen flex-col bg-paper">
       <Navbar />
       <main className="flex flex-1 items-center justify-center px-6 py-16">
-        <div className="w-full max-w-sm">
+        <div className="w-full max-w-sm bg-tile-pink px-6 py-8">
           <h1 className="font-display text-2xl font-semibold text-ink">Set a new password</h1>
 
           <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
@@ -74,7 +74,7 @@ export default function ResetPassword() {
             <button
               type="submit"
               disabled={loading}
-              className="bg-ink px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint disabled:opacity-60"
+              className="bg-blue px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint disabled:opacity-60"
             >
               {loading ? 'Updating…' : 'Update password'}
             </button>

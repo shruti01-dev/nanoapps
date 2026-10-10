@@ -5,12 +5,37 @@
   --font-body: "Inter", sans-serif;
 
   --color-paper: #ffffff;
+  --color-canvas: #f6f8fb;
   --color-ink: #18283b;
-  --color-blueprint: #18283b;
+  --color-muted: #607085;
+  --color-blue: #2563eb;
+  --color-blueprint: #1c50cf;
   --color-blueprint-light: #2563eb;
   --color-amber: #e89821;
-  --color-teal: #36a27b;
+  --color-teal: #2563eb;
   --color-line: #e3e8ef;
+
+  --color-tile-orange: #fff0d9;
+  --color-tile-green: #dcf4e9;
+  --color-tile-pink: #fbe4ee;
+  --color-tile-blue: #e1ecff;
+  --color-tile-orange-ink: #e89821;
+  --color-tile-green-ink: #36a27b;
+  --color-tile-pink-ink: #d66293;
+  --color-tile-blue-ink: #3e78da;
+
+  --color-tile-mint: #dcf4e9;
+  --color-tile-amber: #fff0d9;
+  --color-tile-rose: #fbe4ee;
+  --color-tile-lilac: #e1ecff;
+  --color-tile-peach: #fff0d9;
+  --color-tile-sky: #e1ecff;
+  --color-tile-lime: #dcf4e9;
+
+  --color-blue-pale: #adcbfe;
+  --color-blue-line: #dbe4f2;
+  --color-blue-soft: #eef3fb;
+  --color-blue-text: #245bbd;
 }
 
 body {
@@ -27,24 +52,29 @@ body {
 .bracket-card {
   position: relative;
   border: 1px solid var(--color-line);
+  --bracket: var(--color-ink);
 }
+.bracket-card.bg-tile-orange { --bracket: var(--color-tile-orange-ink); }
+.bracket-card.bg-tile-green { --bracket: var(--color-tile-green-ink); }
+.bracket-card.bg-tile-pink { --bracket: var(--color-tile-pink-ink); }
+.bracket-card.bg-tile-blue { --bracket: var(--color-tile-blue-ink); }
 .bracket-card::before,
 .bracket-card::after {
   content: "";
   position: absolute;
   width: 14px;
   height: 14px;
-  border-color: var(--color-amber);
+  border-color: var(--bracket);
 }
 .bracket-card::before {
   top: -1px;
   left: -1px;
-  border-top: 2px solid var(--color-amber);
-  border-left: 2px solid var(--color-amber);
+  border-top: 2px solid var(--bracket);
+  border-left: 2px solid var(--bracket);
 }
 .bracket-card::after {
   bottom: -1px;
   right: -1px;
-  border-bottom: 2px solid var(--color-amber);
-  border-right: 2px solid var(--color-amber);
+  border-bottom: 2px solid var(--bracket);
+  border-right: 2px solid var(--bracket);
 }

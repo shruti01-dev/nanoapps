@@ -52,7 +52,7 @@ export default function Navbar() {
               </Link>
               <Link
                 to="/register"
-                className="bg-ink px-4 py-2 text-sm font-medium text-paper transition hover:bg-blueprint"
+                className="bg-blue px-4 py-2 text-sm font-medium text-paper transition hover:bg-blueprint"
               >
                 Get started
               </Link>

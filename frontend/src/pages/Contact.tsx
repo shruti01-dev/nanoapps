@@ -35,7 +35,7 @@ export default function Contact() {
             Questions, feedback, or a tool idea — send it over and we'll get back to you.
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-10 flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="mt-10 flex flex-col gap-4 bg-tile-blue px-6 py-8">
             <div>
               <label className="block text-sm font-medium text-ink/80">Name</label>
               <input
@@ -79,7 +79,7 @@ export default function Contact() {
 
             <button
               type="submit"
-              className="mt-2 bg-ink px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint"
+              className="mt-2 bg-blue px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint"
             >
               Send message
             </button>

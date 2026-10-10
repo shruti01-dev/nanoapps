@@ -25,7 +25,7 @@ export default function DataCleaner() {
   }
 
   return (
-    <div className="bracket-card bg-paper p-6">
+    <div className="bracket-card bg-tile-green p-6">
       <h2 className="font-display text-lg font-semibold text-ink">Data cleaner</h2>
       <p className="mt-2 text-sm text-ink/60">
         Trim cells, drop empty rows, and remove duplicate rows from a CSV.

@@ -213,7 +213,7 @@ export default function Admin() {
 
         <section className="px-6 py-12">
           <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-2">
-            <div className="bracket-card bg-paper p-6">
+            <div className="bracket-card bg-tile-green p-6">
               <h2 className="font-display text-lg font-semibold text-ink">
                 {editingId ? 'Edit product' : 'Add product'}
               </h2>
@@ -254,7 +254,7 @@ export default function Admin() {
                   </label>
                 )}
                 <div className="mt-2 flex gap-3">
-                  <button type="submit" className="bg-ink px-4 py-2 text-sm font-medium text-paper transition hover:bg-blueprint">
+                  <button type="submit" className="bg-blue px-4 py-2 text-sm font-medium text-paper transition hover:bg-blueprint">
                     {editingId ? 'Save changes' : 'Create product'}
                   </button>
                   {editingId && (
@@ -267,7 +267,7 @@ export default function Admin() {
             </div>
 
             <div className="flex flex-col gap-10">
-              <div className="bracket-card bg-paper p-6">
+              <div className="bracket-card bg-tile-orange p-6">
                 <h2 className="font-display text-lg font-semibold text-ink">Upload or add a link</h2>
                 <form onSubmit={handleSaveLink} className="mt-5 flex flex-col gap-3">
                   <select className={field} value={uploadProductId ?? ''} onChange={(e) => {
@@ -330,7 +330,7 @@ export default function Admin() {
                 </form>
               </div>
 
-              <div className="bracket-card bg-paper p-6">
+              <div className="bracket-card bg-tile-pink p-6">
                 <h2 className="font-display text-lg font-semibold text-ink">Grant access</h2>
                 <p className="mt-2 text-sm text-ink/60">
                   Use this when you want to unlock a product for someone without a payment. Type the email of an account that already registered, choose the product, then grant access. That person can download it on their next login.
@@ -356,7 +356,7 @@ export default function Admin() {
 
           <div className="mx-auto mt-12 max-w-6xl">
             <h2 className="font-display text-lg font-semibold text-ink">All products</h2>
-            <div className="mt-4 overflow-x-auto border border-line">
+            <div className="mt-4 overflow-x-auto border border-line bg-tile-blue">
               <table className="w-full text-left text-sm">
                 <thead className="border-b border-line text-ink/60">
                   <tr>
@@ -387,7 +387,7 @@ export default function Admin() {
 
           <div className="mx-auto mt-12 max-w-6xl">
             <h2 className="font-display text-lg font-semibold text-ink">Recent orders</h2>
-            <div className="mt-4 overflow-x-auto border border-line">
+            <div className="mt-4 overflow-x-auto border border-line bg-tile-green">
               <table className="w-full text-left text-sm">
                 <thead className="border-b border-line text-ink/60">
                   <tr>
@@ -413,7 +413,7 @@ export default function Admin() {
 
           <div className="mx-auto mt-12 max-w-6xl">
             <h2 className="font-display text-lg font-semibold text-ink">Users</h2>
-            <div className="mt-4 overflow-x-auto border border-line">
+            <div className="mt-4 overflow-x-auto border border-line bg-tile-pink">
               <table className="w-full text-left text-sm">
                 <thead className="border-b border-line text-ink/60">
                   <tr>

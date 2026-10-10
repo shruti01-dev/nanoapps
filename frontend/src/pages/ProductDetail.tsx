@@ -114,7 +114,7 @@ export default function ProductDetail() {
                   <button
                     type="button"
                     onClick={buy}
-                    className="bg-ink px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint"
+                    className="bg-blue px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint"
                   >
                     Pay now
                   </button>
@@ -123,7 +123,7 @@ export default function ProductDetail() {
                   <button
                     type="button"
                     onClick={buy}
-                    className="bg-ink px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint"
+                    className="bg-blue px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint"
                   >
                     Use this tool
                   </button>

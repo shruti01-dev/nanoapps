@@ -33,7 +33,7 @@ export default function Login() {
     <div className="flex min-h-screen flex-col bg-paper">
       <Navbar />
       <main className="flex flex-1 items-center justify-center px-6 py-16">
-        <div className="w-full max-w-sm">
+        <div className="w-full max-w-sm bg-tile-blue px-6 py-8">
           <h1 className="font-display text-2xl font-semibold text-ink">Log in</h1>
           <p className="mt-2 text-sm text-ink/60">
             Access your dashboard, purchases, and downloads.
@@ -79,7 +79,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 bg-ink px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint disabled:opacity-60"
+              className="mt-2 bg-blue px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint disabled:opacity-60"
             >
               {loading ? 'Logging in…' : 'Log in'}
             </button>

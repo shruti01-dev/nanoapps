@@ -57,10 +57,10 @@ export default function FocusTimer() {
           </button>
         ))}
       </div>
-      <p className="mt-4 text-center font-display text-6xl font-semibold tracking-tight text-blueprint">{label}</p>
+      <p className="mt-4 text-center font-display text-6xl font-semibold tracking-tight text-blue">{label}</p>
       <p className="mt-2 text-center text-sm text-muted">{caption}</p>
       <div className="mt-5 flex justify-center gap-3">
-        <button type="button" onClick={toggle} className="rounded-[9px] bg-blueprint px-4 py-2 text-sm font-medium text-white transition hover:bg-blueprint-light">
+        <button type="button" onClick={toggle} className="rounded-[9px] bg-blue px-4 py-2 text-sm font-medium text-white transition hover:bg-blueprint">
           {running ? 'Pause' : remaining === 0 ? 'Start again' : 'Start focus'}
         </button>
         <button

@@ -33,7 +33,7 @@ export default function Register() {
     <div className="flex min-h-screen flex-col bg-paper">
       <Navbar />
       <main className="flex flex-1 items-center justify-center px-6 py-16">
-        <div className="w-full max-w-sm">
+        <div className="w-full max-w-sm bg-tile-green px-6 py-8">
           <h1 className="font-display text-2xl font-semibold text-ink">Create your account</h1>
           <p className="mt-2 text-sm text-ink/60">
             Register to buy tools, subscribe, and manage downloads.
@@ -100,7 +100,7 @@ export default function Register() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="mt-2 bg-ink px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint disabled:opacity-60"
+                  className="mt-2 bg-blue px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint disabled:opacity-60"
                 >
                   {loading ? 'Creating account…' : 'Register'}
                 </button>

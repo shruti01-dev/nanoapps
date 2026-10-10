@@ -29,7 +29,7 @@ export default function ForgotPassword() {
     <div className="flex min-h-screen flex-col bg-paper">
       <Navbar />
       <main className="flex flex-1 items-center justify-center px-6 py-16">
-        <div className="w-full max-w-sm">
+        <div className="w-full max-w-sm bg-tile-orange px-6 py-8">
           <h1 className="font-display text-2xl font-semibold text-ink">Reset your password</h1>
           <p className="mt-2 text-sm text-ink/60">
             Enter your email and we'll send you a reset link.
@@ -47,7 +47,7 @@ export default function ForgotPassword() {
             <button
               type="submit"
               disabled={loading}
-              className="bg-ink px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint disabled:opacity-60"
+              className="bg-blue px-4 py-3 text-sm font-medium text-paper transition hover:bg-blueprint disabled:opacity-60"
             >
               {loading ? 'Sending…' : 'Send reset link'}
             </button>

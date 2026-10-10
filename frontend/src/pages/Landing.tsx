@@ -8,9 +8,9 @@ import { getProducts } from '../api/products'
 import type { CatalogProduct } from '../api/types'
 
 const steps = [
-  { number: '1', title: 'Create your account', description: 'Register with your email and verify it in one click.' },
-  { number: '2', title: 'Buy or subscribe', description: 'Pick a one-time purchase or a monthly/yearly plan — pay by UPI, card, or net banking.' },
-  { number: '3', title: 'Use it from your dashboard', description: 'Launch web tools instantly, or download desktop software with your license attached.' },
+  { number: '1', title: 'Create your account', description: 'Register with your email and verify it in one click.', fill: 'bg-tile-orange' },
+  { number: '2', title: 'Buy or subscribe', description: 'Pick a one-time purchase or a monthly/yearly plan — pay by UPI, card, or net banking.', fill: 'bg-tile-green' },
+  { number: '3', title: 'Use it from your dashboard', description: 'Launch web tools instantly, or download desktop software with your license attached.', fill: 'bg-tile-pink' },
 ]
 
 export default function Landing() {
@@ -74,13 +74,13 @@ export default function Landing() {
       </section>
 
       {/* How it works */}
-      <section id="how-it-works" className="border-y border-line bg-ink/2 py-20">
+      <section id="how-it-works" className="border-y border-line bg-canvas py-20">
         <div className="mx-auto max-w-6xl px-6">
           <h2 className="font-display text-2xl font-semibold text-ink">How it works</h2>
           <div className="mt-12 grid grid-cols-1 gap-10 md:grid-cols-3">
             {steps.map((step) => (
-              <div key={step.number} className="relative pl-12">
-                <span className="font-display absolute left-0 top-0 text-3xl font-semibold text-amber">
+              <div key={step.number} className={`relative p-6 pl-16 ${step.fill}`}>
+                <span className="font-display absolute left-5 top-5 text-3xl font-semibold text-amber">
                   {step.number}
                 </span>
                 <h3 className="font-display text-lg font-semibold text-ink">{step.title}</h3>
@@ -95,17 +95,17 @@ export default function Landing() {
       <section id="pricing" className="mx-auto max-w-6xl px-6 py-20">
         <h2 className="font-display text-2xl font-semibold text-ink">Pay the way that fits the tool</h2>
         <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="bracket-card bg-paper p-8">
+          <div className="bracket-card bg-tile-blue p-8">
             <span className="text-xs font-medium text-teal">Subscription</span>
             <h3 className="mt-2 font-display text-xl font-semibold text-ink">Monthly or yearly</h3>
             <p className="mt-3 text-sm leading-relaxed text-ink/70">
               For web tools you use regularly. Cancel anytime — access ends at the end of your billing period.
             </p>
           </div>
-          <div className="bracket-card bg-blueprint p-8 text-paper">
+          <div className="bracket-card bg-tile-green p-8">
             <span className="text-xs font-medium text-amber">One-time purchase</span>
-            <h3 className="mt-2 font-display text-xl font-semibold">Desktop software</h3>
-            <p className="mt-3 text-sm leading-relaxed text-paper/70">
+            <h3 className="mt-2 font-display text-xl font-semibold text-ink">Desktop software</h3>
+            <p className="mt-3 text-sm leading-relaxed text-ink/70">
               Pay once, own the license, and download future updates from your dashboard.
             </p>
           </div>

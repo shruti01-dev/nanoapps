@@ -24,7 +24,7 @@ export default function Payment() {
     <div className="flex min-h-screen flex-col bg-paper">
       <Navbar />
       <main className="flex flex-1 items-center justify-center px-6 py-16">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md bg-tile-orange px-6 py-8">
           <h1 className="font-display text-2xl font-semibold text-ink">Payment</h1>
           {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
           {product && (
@@ -37,7 +37,7 @@ export default function Payment() {
               <button
                 type="button"
                 disabled
-                className="mt-6 cursor-not-allowed bg-ink px-4 py-3 text-sm font-medium text-paper opacity-50"
+                className="mt-6 cursor-not-allowed bg-blue px-4 py-3 text-sm font-medium text-paper opacity-50"
               >
                 Complete payment
               </button>

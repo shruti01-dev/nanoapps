@@ -30,7 +30,7 @@ export default function ImageCompressor() {
   }
 
   return (
-    <div className="bracket-card bg-paper p-6">
+    <div className="bracket-card bg-tile-orange p-6">
       <h2 className="font-display text-lg font-semibold text-ink">Image compressor</h2>
       <p className="mt-2 text-sm text-ink/60">Shrink a JPEG or PNG. The result downloads as a JPEG.</p>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">

@@ -46,20 +46,20 @@ export default function Pricing() {
 
         <section className="px-6 py-12">
           <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 md:grid-cols-3">
-            <button type="button" aria-pressed={filter === 'free'} onClick={() => choose('free')} className={`bracket-card bg-paper p-8 text-left ${filter === 'free' ? 'border-teal' : ''}`}>
+            <button type="button" aria-pressed={filter === 'free'} onClick={() => choose('free')} className={`bracket-card bg-tile-green p-8 text-left transition hover:-translate-y-0.5 hover:shadow-md ${filter === 'free' ? 'border-teal' : ''}`}>
               <span className="text-xs font-medium text-teal">Free</span>
               <h2 className="mt-2 font-display text-xl font-semibold text-ink">No charge</h2>
               <p className="mt-3 text-sm leading-relaxed text-ink/70">Use the tool or software with no payment.</p>
             </button>
-            <button type="button" aria-pressed={filter === 'one_time'} onClick={() => choose('one_time')} className={`bracket-card bg-paper p-8 text-left ${filter === 'one_time' ? 'border-teal' : ''}`}>
+            <button type="button" aria-pressed={filter === 'one_time'} onClick={() => choose('one_time')} className={`bracket-card bg-tile-orange p-8 text-left transition hover:-translate-y-0.5 hover:shadow-md ${filter === 'one_time' ? 'border-teal' : ''}`}>
               <span className="text-xs font-medium text-teal">One-time</span>
               <h2 className="mt-2 font-display text-xl font-semibold text-ink">Pay once</h2>
               <p className="mt-3 text-sm leading-relaxed text-ink/70">Pay once and keep using the tool or software.</p>
             </button>
-            <button type="button" aria-pressed={filter === 'subscription'} onClick={() => choose('subscription')} className={`bracket-card p-8 text-left ${filter === 'subscription' ? 'border-teal bg-blueprint text-paper' : 'bg-blueprint text-paper'}`}>
+            <button type="button" aria-pressed={filter === 'subscription'} onClick={() => choose('subscription')} className={`bracket-card bg-tile-blue p-8 text-left text-ink transition hover:-translate-y-0.5 hover:shadow-md ${filter === 'subscription' ? 'border-teal' : ''}`}>
               <span className="text-xs font-medium text-amber">Subscription</span>
               <h2 className="mt-2 font-display text-xl font-semibold">Monthly or yearly</h2>
-              <p className="mt-3 text-sm leading-relaxed text-paper/70">A repeating payment. Cancel anytime from your dashboard.</p>
+              <p className="mt-3 text-sm leading-relaxed text-ink/70">A repeating payment. Cancel anytime from your dashboard.</p>
             </button>
           </div>
         </section>
